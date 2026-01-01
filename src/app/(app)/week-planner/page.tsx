@@ -64,21 +64,27 @@ export default function WeekPlannerPage() {
     if (saved5YearVision) {
         setFiveYearVision(saved5YearVision);
     } else {
-        setFiveYearVision("");
+        setFiveYearVision("Not set yet");
     }
 
     const savedBigGoal = localStorage.getItem("bigGoal");
     if (savedBigGoal) {
         setBigGoalYear(savedBigGoal);
     } else {
-        setBigGoalYear("");
+        setBigGoalYear("Not set yet");
     }
 
-    const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
-    if (savedMonthlyBigGoal) {
-        setBigGoalMonth(savedMonthlyBigGoal);
+    const currentMonthIndex = getMonth(week);
+    const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
+     if (savedMonthlyGoals) {
+      const parsedGoals = JSON.parse(savedMonthlyGoals);
+      if(parsedGoals[currentMonthIndex]) {
+        setBigGoalMonth(parsedGoals[currentMonthIndex]);
+      } else {
+        setBigGoalMonth("Not set yet");
+      }
     } else {
-        setBigGoalMonth("");
+      setBigGoalMonth("Not set yet");
     }
     
     const savedAffirmations = localStorage.getItem("affirmations");
@@ -165,17 +171,17 @@ export default function WeekPlannerPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">5 Year Vision:</Label>
-                <Input value={fiveYearVision || "Not set yet"} readOnly disabled className="font-bold" />
+                <Input value={fiveYearVision} readOnly disabled className="font-bold" />
             </div>
              <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">Big Goal for YEAR:</Label>
-                <Input value={bigGoalYear || "Not set yet"} readOnly disabled className="font-bold" />
+                <Input value={bigGoalYear} readOnly disabled className="font-bold" />
             </div>
           </div>
           <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">Big Goal for MONTH:</Label>
-                <Input value={bigGoalMonth || "Not set yet"} readOnly disabled className="font-bold" />
+                <Input value={bigGoalMonth} readOnly disabled className="font-bold" />
             </div>
              <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">Big Goal for WEEK:</Label>
@@ -189,54 +195,52 @@ export default function WeekPlannerPage() {
         <CardHeader>
             <CardTitle>Weekly Schedule & Goals</CardTitle>
         </CardHeader>
-        <CardContent>
-            <div className="grid grid-cols-12 gap-0">
-                <div className="col-span-3 pr-4">
-                    <h3 className="font-bold mb-2 text-center">Goals for the Week</h3>
-                    <div className="space-y-2">
-                        {weeklyGoals.map(goal => (
-                            <div key={goal.id} className="flex items-center gap-2">
-                                <Checkbox checked={goal.priority} onCheckedChange={() => handlePriorityChange(goal.id)} title="Mark as priority" />
-                                <Input value={goal.text} onChange={e => handleGoalChange(goal.id, e.target.value)} className="h-8" />
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRemoveGoal(goal.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
-                        <Button variant="outline" size="sm" className="w-full" onClick={handleAddGoal}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Goal
-                        </Button>
-                    </div>
+        <CardContent className="space-y-6">
+            <div>
+                <h3 className="font-bold mb-2 text-center">Goals for the Week</h3>
+                <div className="space-y-2 max-w-lg mx-auto">
+                    {weeklyGoals.map(goal => (
+                        <div key={goal.id} className="flex items-center gap-2">
+                            <Checkbox checked={goal.priority} onCheckedChange={() => handlePriorityChange(goal.id)} title="Mark as priority" />
+                            <Input value={goal.text} onChange={e => handleGoalChange(goal.id, e.target.value)} className="h-8" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRemoveGoal(goal.id)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+                    <Button variant="outline" size="sm" className="w-full" onClick={handleAddGoal}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Goal
+                    </Button>
                 </div>
-                <div className="col-span-9">
-                    <Table className="border">
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-24 font-bold">Time</TableHead>
-                                {weekDays.map(day => (
-                                    <TableHead key={day.toISOString()} className="text-center font-bold">
-                                        {format(day, "EEEE").toUpperCase()}
-                                        <p className="font-normal text-xs">{format(day, "MMM d")}</p>
-                                    </TableHead>
-                                ))}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell className="font-bold align-middle text-center -rotate-90">MORNING</TableCell>
-                                {Array.from({length: 7}).map((_, i) => <TableCell key={i}><Textarea className="min-h-24 bg-transparent border-0 focus-visible:ring-0" /></TableCell>)}
-                            </TableRow>
-                            <TableRow>
-                                <TableCell className="font-bold align-middle text-center -rotate-90">AFTERNOON</TableCell>
-                                {Array.from({length: 7}).map((_, i) => <TableCell key={i}><Textarea className="min-h-24 bg-transparent border-0 focus-visible:ring-0" /></TableCell>)}
-                            </TableRow>
-                             <TableRow>
-                                <TableCell className="font-bold align-middle text-center -rotate-90">EVENING</TableCell>
-                                 {Array.from({length: 7}).map((_, i) => <TableCell key={i}><Textarea className="min-h-24 bg-transparent border-0 focus-visible:ring-0" /></TableCell>)}
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
+            </div>
+            <div>
+                <Table className="border">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-24 font-bold">Time</TableHead>
+                            {weekDays.map(day => (
+                                <TableHead key={day.toISOString()} className="text-center font-bold">
+                                    {format(day, "EEEE").toUpperCase()}
+                                    <p className="font-normal text-xs">{format(day, "MMM d")}</p>
+                                </TableHead>
+                            ))}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell className="font-bold align-middle text-center -rotate-90">MORNING</TableCell>
+                            {Array.from({length: 7}).map((_, i) => <TableCell key={i}><Textarea className="min-h-24 bg-transparent border-0 focus-visible:ring-0" /></TableCell>)}
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="font-bold align-middle text-center -rotate-90">AFTERNOON</TableCell>
+                            {Array.from({length: 7}).map((_, i) => <TableCell key={i}><Textarea className="min-h-24 bg-transparent border-0 focus-visible:ring-0" /></TableCell>)}
+                        </TableRow>
+                         <TableRow>
+                            <TableCell className="font-bold align-middle text-center -rotate-90">EVENING</TableCell>
+                             {Array.from({length: 7}).map((_, i) => <TableCell key={i}><Textarea className="min-h-24 bg-transparent border-0 focus-visible:ring-0" /></TableCell>)}
+                        </TableRow>
+                    </TableBody>
+                </Table>
             </div>
         </CardContent>
       </Card>
@@ -317,7 +321,5 @@ export default function WeekPlannerPage() {
     </div>
   );
 }
-
-    
 
     
