@@ -30,11 +30,11 @@ export default function SettingsPage() {
   const [email, setEmail] = React.useState('');
   const [avatarUrl, setAvatarUrl] = React.useState('');
   const [avatarPrompt, setAvatarPrompt] = React.useState('');
-  const [isGenerating, setIsGenerating = React.useState(false);
-  const [isLoading, setIsLoading = React.useState(true);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const { theme: activeTheme, setTheme: setActiveTheme } = useTheme();
-  const [selectedTheme, setSelectedTheme = React.useState<string>(activeTheme || 'rose-gold');
+  const [selectedTheme, setSelectedTheme] = React.useState<string>(activeTheme || 'rose-gold');
   
   React.useEffect(() => {
     setSelectedTheme(activeTheme || 'rose-gold');
@@ -131,9 +131,7 @@ export default function SettingsPage() {
 
   const handleSaveTheme = () => {
     if (selectedTheme) {
-      document.documentElement.className = `theme-${selectedTheme}`;
       setActiveTheme(selectedTheme);
-      localStorage.setItem('theme', selectedTheme);
       toast({
         title: 'Theme Saved',
         description: `Your theme has been set to ${selectedTheme.replace(/-/g, ' ')}.`,
@@ -261,5 +259,4 @@ export default function SettingsPage() {
       </Card>
     </div>
   );
-
-    
+}
