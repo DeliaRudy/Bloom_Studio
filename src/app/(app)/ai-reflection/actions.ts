@@ -4,46 +4,58 @@ import { aiProgressReflections } from "@/ai/flows/ai-progress-reflections";
 import { z } from "zod";
 
 const schema = z.object({
-    journalEntries: z.string().min(1, { message: "Journal entries are required." }),
-    visionBoardElements: z.string().min(1, { message: "Vision board elements are required." }),
-    userActivity: z.string().min(1, { message: "User activity is required." }),
+    startDate: z.string().min(1, { message: "Start date is required." }),
+    endDate: z.string().min(1, { message: "End date is required." }),
+    allData: z.string().min(1, { message: "Application data is required." }),
 });
 
-type State = {
-    reflection: string;
+export type ReflectionState = {
+    summaryReflection: string | null;
+    detailedReflection: string | null;
     error: string | null;
 };
 
 export async function getAIReflection(
-  prevState: State,
+  prevState: ReflectionState,
   formData: FormData
-): Promise<State> {
+): Promise<ReflectionState> {
   const validatedFields = schema.safeParse({
-    journalEntries: formData.get("journalEntries"),
-    visionBoardElements: formData.get("visionBoardElements"),
-    userActivity: formData.get("userActivity"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    allData: formData.get("allData"),
   });
 
   if (!validatedFields.success) {
+    const fieldErrors = validatedFields.error.flatten().fieldErrors;
     return {
-      reflection: "",
-      error: validatedFields.error.flatten().fieldErrors.journalEntries?.[0] ||
-             validatedFields.error.flatten().fieldErrors.visionBoardElements?.[0] ||
-             validatedFields.error.flatten().fieldErrors.userActivity?.[0] ||
-             "Invalid input provided."
+      summaryReflection: null,
+      detailedReflection: null,
+      error: fieldErrors.startDate?.[0] || fieldErrors.endDate?.[0] || fieldErrors.allData?.[0] || "Invalid input provided.",
     };
   }
   
   try {
-    const result = await aiProgressReflections(validatedFields.data);
+    const allData = JSON.parse(validatedFields.data.allData);
+    const result = await aiProgressReflections({
+        startDate: validatedFields.data.startDate,
+        endDate: validatedFields.data.endDate,
+        allData: JSON.stringify(allData, null, 2), // Pass as a stringified JSON
+    });
+
+    // In a real app, we would save this to Firestore
+    // For now, it just returns to the client state
+    console.log("Generated reflection:", result);
+
     return {
-      reflection: result.reflection,
+      summaryReflection: result.summaryReflection,
+      detailedReflection: result.detailedReflection,
       error: null,
     };
   } catch (e: any) {
     console.error(e);
     return {
-      reflection: "",
+      summaryReflection: null,
+      detailedReflection: null,
       error: e.message || "An unexpected error occurred while generating the reflection.",
     };
   }

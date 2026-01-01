@@ -11,14 +11,15 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AIProgressReflectionsInputSchema = z.object({
-  journalEntries: z.string().describe('The user journal entries.'),
-  visionBoardElements: z.string().describe('The user vision board elements.'),
-  userActivity: z.string().describe('The description of recent user activity related to their goals.'),
+  startDate: z.string().describe('The start date for the reflection period.'),
+  endDate: z.string().describe('The end date for the reflection period.'),
+  allData: z.any().describe('A JSON object containing all user data (goals, plans, etc.).'),
 });
 export type AIProgressReflectionsInput = z.infer<typeof AIProgressReflectionsInputSchema>;
 
 const AIProgressReflectionsOutputSchema = z.object({
-  reflection: z.string().describe('The AI-generated progress reflection.'),
+  summaryReflection: z.string().describe('A concise, summary version of the AI-generated progress reflection.'),
+  detailedReflection: z.string().describe('A detailed, in-depth version of the AI-generated progress reflection.'),
 });
 export type AIProgressReflectionsOutput = z.infer<typeof AIProgressReflectionsOutputSchema>;
 
@@ -30,15 +31,26 @@ const prompt = ai.definePrompt({
   name: 'aiProgressReflectionsPrompt',
   input: {schema: AIProgressReflectionsInputSchema},
   output: {schema: AIProgressReflectionsOutputSchema},
-  prompt: `You are an AI assistant providing daily progress reflections to the user to keep them motivated towards their goals.
+  prompt: `You are an AI assistant providing progress reflections to a user to keep them motivated towards their goals. The user has provided a JSON object with all of their data from the app and a date range for the reflection.
 
-  Here are the user's journal entries: {{{journalEntries}}}
+  Date Range for this reflection: {{{startDate}}} to {{{endDate}}}
 
-  Here are the user's vision board elements: {{{visionBoardElements}}}
+  User Data:
+  \`\`\`json
+  {{{allData}}}
+  \`\`\`
 
-  Here is a description of recent user activity: {{{userActivity}}}
+  Analyze all the provided data within the given date range. Look for patterns, progress, and areas for improvement in their daily plans, habit tracking, goal completion, and gratitude entries.
 
-  Generate a short, motivational progress reflection based on the information above. Focus on providing encouragement and suggesting adjustments where necessary. Incorporate vision elements if the user activity shows progress toward achieving elements of the vision board.
+  Based on your analysis, generate two versions of the reflection:
+  1.  **Summary Reflection**: A short, motivational paragraph (2-3 sentences) that highlights a key achievement or offers a piece of encouragement.
+  2.  **Detailed Reflection**: A more comprehensive analysis (3-5 paragraphs) that breaks down their progress. It should:
+      - Acknowledge specific goals or habits they worked on.
+      - Connect their daily activities to their larger vision (e.g., vision board, 5-year plan).
+      - Identify potential challenges or inconsistencies.
+      - Offer actionable suggestions for the upcoming period.
+
+  Your tone should be encouraging, insightful, and supportive.
   `,
 });
 
