@@ -45,8 +45,8 @@ const features = [
     icon: ImageIcon,
   },
   {
-    href: "/goal-setting",
-    title: "Goal Setting",
+    href: "/goals-list",
+    title: "Goals List",
     description: "Set short and long-term goals.",
     icon: ListTodo,
   },

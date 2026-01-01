@@ -20,7 +20,7 @@ const goalCategories = [
 
 type GoalState = Record<string, { shortTerm: string; longTerm: string }>;
 
-export default function GoalSettingPage() {
+export default function GoalsListPage() {
   const initialSate = goalCategories.reduce((acc, cat) => {
     acc[cat.id] = { shortTerm: "", longTerm: ""};
     return acc;

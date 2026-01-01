@@ -29,7 +29,7 @@ const links = [
   { href: "/vision-statement", label: "My Big Goal", icon: Quote },
   { href: "/action-plan", label: "Action Plan", icon: ListChecks },
   { href: "/vision-board", label: "Vision Board", icon: ImageIcon },
-  { href: "/goal-setting", label: "Goal Setting", icon: ListTodo },
+  { href: "/goals-list", label: "Goals List", icon: ListTodo },
   { href: "/travel-map", label: "Travel Map", icon: Map },
   { href: "/ai-reflection", label: "AI Reflection", icon: Sparkles },
 ];
