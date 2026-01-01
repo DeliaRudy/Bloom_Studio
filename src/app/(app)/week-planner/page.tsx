@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { CycleSyncBanner } from '@/components/cycle-sync-banner';
 
 type WeeklyGoal = {
   id: string;
@@ -292,6 +293,8 @@ export default function WeekPlannerPage() {
           </Button>
         </div>
       </div>
+      
+      <CycleSyncBanner currentDate={weekStart} view="week" />
 
       <Card className="mb-6">
         <CardHeader>
@@ -497,5 +500,3 @@ export default function WeekPlannerPage() {
     </div>
   );
 }
-
-    

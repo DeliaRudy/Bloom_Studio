@@ -34,6 +34,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CycleSyncBanner } from '@/components/cycle-sync-banner';
+
 
 type Priority = {
   id: string;
@@ -224,6 +226,9 @@ export function DailyPlanClient() {
           </TabsList>
         </Tabs>
       </div>
+
+       <CycleSyncBanner currentDate={currentDay} view="day" />
+
 
       <div className="flex flex-col mb-4 px-1 gap-4">
         <div className="flex items-center gap-4">
