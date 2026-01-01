@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Target } from 'lucide-react';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDocs, collection } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { VisionStatement, MonthlyGoal } from '@/lib/types';
 import { format } from 'date-fns';
@@ -38,33 +38,36 @@ export default function MonthlyGoalsPage() {
     'July', 'August', 'September', 'October', 'November', 'December'
   ], []);
 
-  const [monthlyGoals, setMonthlyGoals] = React.useState<Record<string, string>>(
-    months.reduce((acc, _, i) => {
-        acc[format(new Date(currentYear, i), 'yyyy-MM')] = '';
-        return acc;
-    }, {} as Record<string, string>)
-  );
+  const [monthlyGoals, setMonthlyGoals] = React.useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = React.useState(true);
 
   // This effect will fetch all 12 monthly goal documents for the year
   React.useEffect(() => {
       if (!user) return;
+      setIsLoading(true);
       const fetchGoals = async () => {
           const goals: Record<string, string> = {};
-          for (let i = 0; i < 12; i++) {
+          const goalsCollectionRef = collection(firestore, `users/${user.uid}/sessions/default/monthlyGoals`);
+          const snapshot = await getDocs(goalsCollectionRef);
+          snapshot.forEach(doc => {
+              if(doc.id.startsWith(String(currentYear))) {
+                goals[doc.id] = (doc.data() as MonthlyGoal).bigGoal || '';
+              }
+          });
+
+          // Ensure all months for the current year are initialized
+          months.forEach((_, i) => {
               const monthId = format(new Date(currentYear, i), 'yyyy-MM');
-              const docRef = doc(firestore, `users/${user.uid}/sessions/default/monthlyGoals`, monthId);
-              // In a real app you might use getDocs with a query, but for simplicity we fetch one by one
-              const docSnap = await doc(firestore, docRef.path).get();
-              if (docSnap.exists()) {
-                  goals[monthId] = (docSnap.data() as MonthlyGoal).bigGoal || '';
-              } else {
+              if(!goals[monthId]) {
                   goals[monthId] = '';
               }
-          }
+          });
+
           setMonthlyGoals(goals);
+          setIsLoading(false);
       }
       fetchGoals();
-  }, [user, firestore, currentYear]);
+  }, [user, firestore, currentYear, months]);
 
 
   const handleGoalChange = (monthId: string, value: string) => {
@@ -115,7 +118,7 @@ export default function MonthlyGoalsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          {months.map((month, index) => {
+          {isLoading ? <p>Loading goals...</p> : months.map((month, index) => {
               const monthId = format(new Date(currentYear, index), 'yyyy-MM');
               return (
                 <div key={index} className="grid grid-cols-[auto_1fr] items-center gap-4">
@@ -143,3 +146,5 @@ export default function MonthlyGoalsPage() {
     </div>
   );
 }
+
+    

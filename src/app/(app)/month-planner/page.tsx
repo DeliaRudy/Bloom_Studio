@@ -68,7 +68,7 @@ export default function MonthPlannerPage() {
   const monthlyPlanDocRef = useMemoFirebase(() => 
     user ? doc(firestore, `users/${user.uid}/sessions/default/monthlyGoals`, monthId) : null
   , [user, firestore, monthId]);
-  const { data: monthlyPlanData } = useDoc<MonthlyGoal>(monthlyPlanDocRef);
+  const { data: monthlyPlanData, isLoading } = useDoc<MonthlyGoal>(monthlyPlanDocRef);
 
   const availableMonthlyGoals = React.useMemo(() => 
     monthlyGoalsData?.map(g => g.bigGoal).filter(g => g && g.trim() !== '') || []
@@ -79,53 +79,40 @@ export default function MonthPlannerPage() {
   , [user, firestore]);
   const { data: journalEntries } = useCollection<JournalEntry>(journalEntriesCollectionRef);
   
-  const startHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_start').map(e => e.text) || [], [journalEntries]);
-  const stopHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_stop').map(e => e.text) || [], [journalEntries]);
+  const startHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_start_focus').map(e => e.text) || [], [journalEntries]);
+  const stopHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_stop_focus').map(e => e.text) || [], [journalEntries]);
   const lifeRules = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'reason').map(e => e.text) || [], [journalEntries]);
 
   // UI state for selections
-  const [selectedMonthlyBigGoal, setSelectedMonthlyBigGoal] = React.useState<string | undefined>(undefined);
   const [selectedStartHabit, setSelectedStartHabit] = React.useState<string | undefined>(undefined);
   const [selectedStopHabit, setSelectedStopHabit] = React.useState<string | undefined>(undefined);
   const [selectedLifeRules, setSelectedLifeRules] = React.useState<string[]>([]);
-  const [goals, setGoals] = React.useState<Goal[]>([]);
-
-   React.useEffect(() => {
-    if (monthlyPlanData) {
-      setSelectedMonthlyBigGoal(monthlyPlanData.bigGoal);
-      setGoals(monthlyPlanData.goals as Goal[] || []);
-    }
-  }, [monthlyPlanData]);
-
+  
   const handleUpdateMonthlyPlan = (field: keyof MonthlyGoal, value: any) => {
     if (!monthlyPlanDocRef) return;
     setDocumentNonBlocking(monthlyPlanDocRef, { [field]: value, id: monthId, sessionID: 'default' }, { merge: true });
   }
 
   const handleToggleGoal = (id: string) => {
-    const newGoals = goals.map((goal) =>
+    const newGoals = (monthlyPlanData?.goals || []).map((goal) =>
         goal.id === id ? { ...goal, completed: !goal.completed } : goal
     );
-    setGoals(newGoals);
     handleUpdateMonthlyPlan('goals', newGoals);
   };
 
   const handleGoalTextChange = (id: string, text: string) => {
-    const newGoals = goals.map((goal) => (goal.id === id ? { ...goal, text } : goal));
-    setGoals(newGoals);
+    const newGoals = (monthlyPlanData?.goals || []).map((goal) => (goal.id === id ? { ...goal, text } : goal));
     handleUpdateMonthlyPlan('goals', newGoals);
   };
 
   const handleAddGoal = () => {
     const newGoal: Goal = { id: Date.now().toString(), text: '', completed: false };
-    const newGoals = [...goals, newGoal];
-    setGoals(newGoals);
+    const newGoals = [...(monthlyPlanData?.goals || []), newGoal];
     handleUpdateMonthlyPlan('goals', newGoals);
   };
 
   const handleRemoveGoal = (id: string) => {
-    const newGoals = goals.filter((goal) => goal.id !== id);
-    setGoals(newGoals);
+    const newGoals = (monthlyPlanData?.goals || []).filter((goal) => goal.id !== id);
     handleUpdateMonthlyPlan('goals', newGoals);
   };
 
@@ -144,9 +131,11 @@ export default function MonthPlannerPage() {
     });
   };
 
+  const goals = monthlyPlanData?.goals || [];
   const goalsAchieved = goals.filter((g) => g.completed).length;
   const goalsSet = goals.length;
   const achievementRate = goalsSet > 0 ? Math.round((goalsAchieved / goalsSet) * 100) : 0;
+  const selectedMonthlyBigGoal = monthlyPlanData?.bigGoal;
 
   return (
     <div>
@@ -212,7 +201,6 @@ export default function MonthPlannerPage() {
             <div className="flex-1">
               <Select
                 onValueChange={(value) => {
-                  setSelectedMonthlyBigGoal(value);
                   handleUpdateMonthlyPlan('bigGoal', value);
                 }}
                 value={selectedMonthlyBigGoal}
@@ -229,7 +217,7 @@ export default function MonthPlannerPage() {
                     ))
                   ) : (
                     <SelectItem value="no-goals" disabled>
-                      No monthly goals set in Month Map
+                      No monthly goals set in Monthly Goals page
                     </SelectItem>
                   )}
                 </SelectContent>
@@ -246,33 +234,35 @@ export default function MonthPlannerPage() {
             <CardDescription>Break down your monthly big goal into smaller, actionable steps.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {goals.map((goal) => (
-                <div key={goal.id} className="flex items-center gap-3">
-                  <Checkbox
-                    id={`goal-${goal.id}`}
-                    checked={goal.completed}
-                    onCheckedChange={() => handleToggleGoal(goal.id)}
-                  />
-                  <Input
-                    id={`goal-text-${goal.id}`}
-                    defaultValue={goal.text}
-                    onBlur={(e) => handleGoalTextChange(goal.id, e.target.value)}
-                    className={`flex-1 text-sm ${
-                      goal.completed ? 'line-through text-muted-foreground' : ''
-                    }`}
-                    placeholder="e.g., Draft first chapter of my book"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveGoal(goal.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+            {isLoading ? <p>Loading goals...</p> : (
+              <div className="space-y-3">
+                {goals.map((goal) => (
+                  <div key={goal.id} className="flex items-center gap-3">
+                    <Checkbox
+                      id={`goal-${goal.id}`}
+                      checked={goal.completed}
+                      onCheckedChange={() => handleToggleGoal(goal.id)}
+                    />
+                    <Input
+                      id={`goal-text-${goal.id}`}
+                      defaultValue={goal.text}
+                      onBlur={(e) => handleGoalTextChange(goal.id, e.target.value)}
+                      className={`flex-1 text-sm ${
+                        goal.completed ? 'line-through text-muted-foreground' : ''
+                      }`}
+                      placeholder="e.g., Draft first chapter of my book"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveGoal(goal.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
             <Button
               variant="outline"
               className="w-full mt-4"
@@ -436,3 +426,5 @@ export default function MonthPlannerPage() {
     </div>
   );
 }
+
+    
