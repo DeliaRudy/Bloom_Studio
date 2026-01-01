@@ -1,7 +1,8 @@
+
 "use client";
 
 import * as React from "react";
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { DateRange } from "react-day-picker";
 
@@ -13,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAIReflection, type ReflectionState } from "./actions";
 
 import { Sparkles, Calendar as CalendarIcon, Copy, History } from "lucide-react";
-import { DatePicker } from "@/components/ui/datepicker";
+import { DatePickerWithRange } from "@/components/ui/datepicker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 
@@ -32,7 +33,7 @@ type PastReflection = {
 }
 
 export default function AiReflectionPage() {
-  const [state, formAction] = useFormState(getAIReflection, initialState);
+  const [state, formAction] = useActionState(getAIReflection, initialState);
   const { toast } = useToast();
 
   const [date, setDate] = React.useState<DateRange | undefined>({
@@ -68,7 +69,7 @@ export default function AiReflectionPage() {
         setSelectedPastReflection(newReflection);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, toast]);
+  }, [state]);
 
   React.useEffect(() => {
     // In a real app, this would be a more robust data fetching and aggregation strategy
@@ -118,7 +119,7 @@ export default function AiReflectionPage() {
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="date-range">Date range</Label>
-                        <DatePicker
+                        <DatePickerWithRange
                             date={date}
                             setDate={setDate}
                             className="w-full"
@@ -145,7 +146,7 @@ export default function AiReflectionPage() {
                         </CardDescription>
                     </div>
                     {reflectionToShow.summary && (
-                         <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(reflectionToShow.summary || "")}>
+                         <Button variant="ghost" size="icon" onClick={() => handleCopyToClipboard(reflectionToShow.detailed || reflectionToShow.summary || "")}>
                             <Copy className="h-4 w-4" />
                         </Button>
                     )}
@@ -209,3 +210,5 @@ export default function AiReflectionPage() {
     </div>
   );
 }
+
+    
