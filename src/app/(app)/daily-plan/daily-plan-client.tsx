@@ -485,19 +485,19 @@ export function DailyPlanClient() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                          <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-2 px-4 py-2">
+                          <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 px-4 py-2">
                             <Label className="font-semibold">Time</Label>
                             <Label className="font-semibold">Task</Label>
                             <Label className="font-semibold">Notes</Label>
-                            <Label className="font-semibold">Priority</Label>
+                            <Label className="font-semibold text-right pr-2">Priority</Label>
                           </div>
                           <Separator />
-                          {hours.map((hour) => {
-                            const time = new Date(`1970-01-01T${hour}`);
-                            return (
-                              <div key={hour}>
-                                <div className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-x-2 px-4 py-2">
-                                  <Label className="font-semibold text-primary w-20">
+                          <div className="max-h-[480px] overflow-y-auto pr-2">
+                            {hours.map((hour, hourIndex) => {
+                              const time = new Date(`1970-01-01T${hour}`);
+                              return (
+                                <div key={hour} className={cn("grid grid-cols-[auto_1fr_1fr_auto] items-center gap-x-4 px-2 rounded-md", hourIndex % 2 === 0 ? 'bg-muted/30' : '')}>
+                                  <Label className="font-semibold text-primary w-20 py-3 text-center">
                                     {format(time, 'h:mm a')}
                                   </Label>
                                   <Input
@@ -511,6 +511,7 @@ export function DailyPlanClient() {
                                       )
                                     }
                                     placeholder="Task/Activity"
+                                    className="bg-transparent border-0 border-b rounded-none"
                                   />
                                   <Input
                                     value={plan.schedule[hour]?.notes || ''}
@@ -523,6 +524,7 @@ export function DailyPlanClient() {
                                       )
                                     }
                                     placeholder="Notes..."
+                                    className="bg-transparent border-0 border-b rounded-none"
                                   />
                                   <Select
                                     value={
@@ -539,7 +541,7 @@ export function DailyPlanClient() {
                                       )
                                     }
                                   >
-                                    <SelectTrigger className="w-28">
+                                    <SelectTrigger className="w-28 border-0 bg-transparent focus:ring-0 focus:ring-offset-0">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -551,10 +553,9 @@ export function DailyPlanClient() {
                                     </SelectContent>
                                   </Select>
                                 </div>
-                                <Separator />
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </CardContent>
                       </Card>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -580,7 +581,7 @@ export function DailyPlanClient() {
                         <Card>
                           <CardHeader>
                             <CardTitle>End-of-Day Reflection</CardTitle>
-                          </CardHeader>
+                          </Header>
                           <CardContent>
                             <Textarea
                               rows={4}
