@@ -228,12 +228,10 @@ export function DailyPlanClient() {
                     <p className="text-muted-foreground text-sm">Designed to instill intentional habits, reinforce discipline, and measure daily consistency.</p>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
                 <CarouselPrevious />
-                <div className="text-center w-32">
-                    <p className="font-semibold text-lg">{format(currentDay, "MMMM")}</p>
-                    <p className="text-2xl font-bold text-primary">{format(currentDay, "do,")}</p>
-                    <p className="text-lg text-muted-foreground">{format(currentDay, "yyyy")}</p>
+                <div className="text-center w-64">
+                    <p className="text-lg font-semibold text-primary">{format(currentDay, "EEEE, do MMMM yyyy")}</p>
                 </div>
                 <CarouselNext />
                 <Button variant="outline" onClick={handleGoToToday}>Today</Button>
