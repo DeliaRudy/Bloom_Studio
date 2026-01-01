@@ -113,32 +113,6 @@ export default function LifeVisionPage() {
       </Card>
 
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="font-headline">5-Year Vision Statement</CardTitle>
-          <CardDescription>Craft a powerful, concise statement for your five-year goal.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           <div className="p-4 bg-muted/50 rounded-lg mb-6">
-            <p className="text-lg italic text-center text-foreground/80">{visionStatementPreview}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-             <div className="space-y-2 md:col-span-1">
-                <Label htmlFor="vision-dream">I will...</Label>
-                <Input id="vision-dream" placeholder="buy my dream house" value={visionStatementDream} onChange={e => setVisionStatementDream(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="vision-amount">...and I will have made/invested ($)</Label>
-                <Input id="vision-amount" type="number" placeholder="50,000" value={visionStatementAmount} onChange={e => setVisionStatementAmount(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-                <Label>by...</Label>
-                <Input value={fiveYearsFromNow.toLocaleDateString()} readOnly disabled />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
         <CardContent className="pt-6">
           <Accordion type="multiple" className="w-full" defaultValue={["item-1", "item-2"]}>
             <AccordionItem value="item-1">
@@ -187,6 +161,33 @@ export default function LifeVisionPage() {
           </Accordion>
         </CardContent>
       </Card>
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="font-headline">5-Year Vision Statement</CardTitle>
+          <CardDescription>Craft a powerful, concise statement for your five-year goal.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <div className="p-4 bg-muted/50 rounded-lg mb-6">
+            <p className="text-lg italic text-center text-foreground/80">{visionStatementPreview}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+             <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="vision-dream">I will...</Label>
+                <Input id="vision-dream" placeholder="buy my dream house" value={visionStatementDream} onChange={e => setVisionStatementDream(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="vision-amount">...and I will have made/invested ($)</Label>
+                <Input id="vision-amount" type="number" placeholder="50,000" value={visionStatementAmount} onChange={e => setVisionStatementAmount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label>by...</Label>
+                <Input value={fiveYearsFromNow.toLocaleDateString()} readOnly disabled />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-end mt-8">
         <Button size="lg" onClick={handleSave}>Next Step</Button>
       </div>
