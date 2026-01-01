@@ -261,37 +261,39 @@ export default function MonthPlannerPage() {
             Select habits and rules to focus on this month.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-                <Label htmlFor="start-habit">Something to Start</Label>
-                <Select onValueChange={setSelectedStartHabit} value={selectedStartHabit}>
-                    <SelectTrigger id="start-habit">
-                        <SelectValue placeholder="Select a habit to start" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {startHabits.length > 0 ? (
-                            startHabits.map((habit, index) => <SelectItem key={index} value={habit}>{habit}</SelectItem>)
-                        ) : (
-                            <SelectItem value="no-habits" disabled>No 'start' habits defined</SelectItem>
-                        )}
-                    </SelectContent>
-                </Select>
-            </div>
+        <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <Label htmlFor="start-habit">Something to Start</Label>
+                    <Select onValueChange={setSelectedStartHabit} value={selectedStartHabit}>
+                        <SelectTrigger id="start-habit">
+                            <SelectValue placeholder="Select a habit to start" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {startHabits.length > 0 ? (
+                                startHabits.map((habit, index) => <SelectItem key={index} value={habit}>{habit}</SelectItem>)
+                            ) : (
+                                <SelectItem value="no-habits" disabled>No 'start' habits defined</SelectItem>
+                            )}
+                        </SelectContent>
+                    </Select>
+                </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="stop-habit">Something to Stop</Label>
-                <Select onValueChange={setSelectedStopHabit} value={selectedStopHabit}>
-                    <SelectTrigger id="stop-habit">
-                        <SelectValue placeholder="Select a habit to stop" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {stopHabits.length > 0 ? (
-                           stopHabits.map((habit, index) => <SelectItem key={index} value={habit}>{habit}</SelectItem>)
-                        ) : (
-                            <SelectItem value="no-habits" disabled>No 'stop' habits defined</SelectItem>
-                        )}
-                    </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                    <Label htmlFor="stop-habit">Something to Stop</Label>
+                    <Select onValueChange={setSelectedStopHabit} value={selectedStopHabit}>
+                        <SelectTrigger id="stop-habit">
+                            <SelectValue placeholder="Select a habit to stop" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {stopHabits.length > 0 ? (
+                            stopHabits.map((habit, index) => <SelectItem key={index} value={habit}>{habit}</SelectItem>)
+                            ) : (
+                                <SelectItem value="no-habits" disabled>No 'stop' habits defined</SelectItem>
+                            )}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
              <div className="space-y-2">
                 <Label>Life Rules (Select up to 2)</Label>
