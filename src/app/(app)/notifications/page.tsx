@@ -146,8 +146,8 @@ export default function NotificationsPage() {
         });
     } else {
         toast({
-            title: "Test Email Sent!",
-            description: `An email was generated for ${user.email}. Check the server console to see it.`
+            title: "Test Email Queued!",
+            description: `An email for ${user.email} was added to the Firestore 'mail' collection.`
         });
     }
     setIsSending(false);
@@ -330,5 +330,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-
-    

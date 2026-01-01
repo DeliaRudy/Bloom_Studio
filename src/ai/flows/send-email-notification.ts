@@ -1,15 +1,18 @@
 
 'use server';
 /**
- * @fileOverview This file defines a flow for sending (simulated) email notifications.
+ * @fileOverview This file defines a flow for sending email notifications by writing to Firestore.
  *
- * - sendEmailNotification - A function that generates an email and logs it to the console.
+ * - sendEmailNotification - A function that generates an email and writes it to the /mail collection.
  * - SendEmailNotificationInput - The input type for the function.
  * - SendEmailNotificationOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { collection, addDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 
 const SendEmailNotificationInputSchema = z.object({
   email: z.string().email().describe('The email address of the recipient.'),
@@ -22,10 +25,13 @@ export type SendEmailNotificationInput = z.infer<
 >;
 
 const SendEmailNotificationOutputSchema = z.object({
-  to: z.string(),
-  subject: z.string(),
-  body: z.string(),
+  delivery: z.object({
+    startTime: z.string(),
+    state: z.string(), // e.g., 'PROCESSING', 'COMPLETED', 'ERROR'
+    info: z.string(),
+  }),
 });
+
 export type SendEmailNotificationOutput = z.infer<
   typeof SendEmailNotificationOutputSchema
 >;
@@ -36,10 +42,15 @@ export async function sendEmailNotification(
   return sendEmailNotificationFlow(input);
 }
 
+const emailContentSchema = z.object({
+  subject: z.string(),
+  body: z.string(),
+});
+
 const prompt = ai.definePrompt({
   name: 'sendEmailNotificationPrompt',
   input: { schema: SendEmailNotificationInputSchema },
-  output: { schema: SendEmailNotificationOutputSchema },
+  output: { schema: emailContentSchema },
   prompt: `You are an AI assistant for an app called BloomVision. Your task is to generate the content for an email notification. The user wants to receive a notification of type '{{notificationType}}'.
 
 Based on the notification type, generate an appropriate subject line and a concise, motivating email body.
@@ -51,7 +62,7 @@ Here are some guidelines for each type:
 - **habits**: A reminder to focus on their "why" and connect it to their daily tasks. Be inspirational.
 - **reflection**: An evening reminder (8pm) to reflect on their day. Be gentle and calming.
 
-The user's email is {{email}}. You must set the 'to' field in the output to this email address. The output format must be a valid JSON object matching the output schema.
+The output format must be a valid JSON object matching the output schema. Do not include the 'to' field.
 `,
 });
 
@@ -65,17 +76,26 @@ const sendEmailNotificationFlow = ai.defineFlow(
     const { output } = await prompt(input);
     const emailContent = output!;
 
-    // In a real application, you would integrate with an email service like SendGrid or Nodemailer here.
-    // For this simulation, we will log the email content to the console.
-    console.log('--- SIMULATED EMAIL ---');
-    console.log(`To: ${emailContent.to}`);
-    console.log(`Subject: ${emailContent.subject}`);
-    console.log('---');
-    console.log(emailContent.body);
-    console.log('--- END OF EMAIL ---');
+    // This now writes to Firestore instead of logging to the console.
+    const { firestore } = initializeFirebase();
+    const mailCollection = collection(firestore, 'mail');
 
-    return emailContent;
+    const emailDoc = {
+      to: [input.email],
+      message: {
+        subject: emailContent.subject,
+        html: emailContent.body.replace(/\n/g, '<br>'), // Convert newlines to HTML breaks
+      },
+    };
+    
+    const docRef = await addDoc(mailCollection, emailDoc);
+
+    return {
+      delivery: {
+        startTime: new Date().toISOString(),
+        state: 'COMPLETED',
+        info: `Email document created in Firestore with ID: ${docRef.id}`,
+      },
+    };
   }
 );
-
-    

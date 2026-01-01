@@ -397,6 +397,27 @@
         }
       },
       "required": ["id", "text", "createdAt"]
+    },
+    "Mail": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Mail",
+        "type": "object",
+        "description": "An email to be sent by the Trigger Email extension.",
+        "properties": {
+            "to": {
+                "type": "array",
+                "items": { "type": "string", "format": "email" }
+            },
+            "message": {
+                "type": "object",
+                "properties": {
+                    "subject": { "type": "string" },
+                    "html": { "type": "string" }
+                },
+                "required": ["subject", "html"]
+            }
+        },
+        "required": ["to", "message"]
     }
   },
   "auth": {
@@ -702,6 +723,20 @@
               "description": "Unique identifier for the purpose reason."
             }
           ]
+        }
+      },
+      {
+        "path": "/mail/{mailId}",
+        "definition": {
+            "entityName": "Mail",
+            "schema": {
+                "$ref": "#/backend/entities/Mail"
+            },
+            "description": "Stores email documents to be sent by the Trigger Email extension. This is a top-level collection.",
+            "params": [{
+                "name": "mailId",
+                "description": "Unique identifier for the email document."
+            }]
         }
       }
     ],

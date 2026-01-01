@@ -18,6 +18,7 @@ const schema = z.object({
 
 type State = {
   success: boolean;
+  message: string | null;
   error: string | null;
 };
 
@@ -30,6 +31,7 @@ export async function sendTestEmailNotification(
     const fieldErrors = validatedFields.error.flatten().fieldErrors;
     return {
       success: false,
+      message: null,
       error:
         fieldErrors.email?.[0] ||
         fieldErrors.notificationType?.[0] ||
@@ -38,20 +40,19 @@ export async function sendTestEmailNotification(
   }
 
   try {
-    // This flow simulates sending an email by logging it to the console.
-    await sendEmailNotification(validatedFields.data);
+    const result = await sendEmailNotification(validatedFields.data);
 
     return {
       success: true,
+      message: result.delivery.info,
       error: null,
     };
   } catch (e: any) {
     console.error(e);
     return {
       success: false,
+      message: null,
       error: e.message || "An unexpected error occurred.",
     };
   }
 }
-
-    
