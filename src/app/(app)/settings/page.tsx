@@ -17,6 +17,9 @@ import { Sparkles, Palette, Save } from 'lucide-react';
 import { generateAvatarAction } from './actions';
 import { useTheme } from 'next-themes';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -27,11 +30,11 @@ export default function SettingsPage() {
   const [email, setEmail] = React.useState('');
   const [avatarUrl, setAvatarUrl] = React.useState('');
   const [avatarPrompt, setAvatarPrompt] = React.useState('');
-  const [isGenerating, setIsGenerating] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isGenerating, setIsGenerating = React.useState(false);
+  const [isLoading, setIsLoading = React.useState(true);
 
   const { theme: activeTheme, setTheme: setActiveTheme } = useTheme();
-  const [selectedTheme, setSelectedTheme] = React.useState<string>(activeTheme || 'rose-gold');
+  const [selectedTheme, setSelectedTheme = React.useState<string>(activeTheme || 'rose-gold');
   
   React.useEffect(() => {
     setSelectedTheme(activeTheme || 'rose-gold');
@@ -133,17 +136,43 @@ export default function SettingsPage() {
       localStorage.setItem('theme', selectedTheme);
       toast({
         title: 'Theme Saved',
-        description: `Your theme has been set to ${selectedTheme.replace('-', ' ')}.`,
+        description: `Your theme has been set to ${selectedTheme.replace(/-/g, ' ')}.`,
       });
     }
   };
 
+  const themes = [
+    { name: 'Rose Gold', value: 'rose-gold', colors: ['bg-[#f5c1cd]', 'bg-[#dead9d]', 'bg-[#6d100f]'] },
+    { name: 'Black Gold', value: 'black-gold', colors: ['bg-[#1a1a1a]', 'bg-[#d4af37]', 'bg-[#f0e68c]'] },
+    { name: 'Brown Gold', value: 'brown-gold', colors: ['bg-[#a0522d]', 'bg-[#e6c278]', 'bg-[#fdf5e6]'] },
+  ];
 
   if (isLoading) {
       return (
-          <div className="flex items-center justify-center h-full">
-              <p>Loading settings...</p>
-          </div>
+        <div>
+            <PageHeader
+                title="Account Settings"
+                description="Manage your account details, preferences, and appearance."
+            />
+            <Card className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                    <div className="md:col-span-1 space-y-6 flex flex-col items-center md:items-start">
+                        <Skeleton className="h-32 w-32 rounded-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="md:col-span-2 space-y-6">
+                        <Skeleton className="h-10 w-1/3" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <div className="pt-4">
+                            <Skeleton className="h-10 w-1/3" />
+                            <Skeleton className="h-20 w-full mt-2" />
+                        </div>
+                    </div>
+                </div>
+            </Card>
+        </div>
       )
   }
 
@@ -153,105 +182,83 @@ export default function SettingsPage() {
         title="Account Settings"
         description="Manage your account details, preferences, and appearance."
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        <Card className="md:col-span-1">
-            <CardHeader>
-            <CardTitle>My Profile</CardTitle>
-            <CardDescription>
-                Update your personal information below.
-            </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} disabled readOnly />
-                <p className="text-sm text-muted-foreground">
-                    Email cannot be changed.
-                </p>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                />
-            </div>
-            </CardContent>
-            <CardFooter>
-            <Button onClick={handleUpdateProfile}>Save Changes</Button>
-            </CardFooter>
-        </Card>
-        <div className="md:col-span-1 space-y-8">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Avatar</CardTitle>
-                    <CardDescription>Update your profile picture.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-6">
-                    <Avatar className="h-32 w-32">
+      <Card>
+        <div className="grid grid-cols-1 md:grid-cols-3">
+            {/* Left Column */}
+            <div className="md:col-span-1 md:border-r p-6 lg:p-8 space-y-6">
+                <div className="flex flex-col items-center text-center">
+                    <Avatar className="h-32 w-32 mb-4 ring-4 ring-primary/20">
                         <AvatarImage src={avatarUrl} alt={username} />
                         <AvatarFallback>{username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
-                     <div className="w-full space-y-4">
-                        <div>
-                            {/* In a real app, you'd use a file input and upload to storage */}
-                            <Button variant="outline" className="w-full" disabled>Upload Image</Button>
-                            <p className="text-xs text-center text-muted-foreground mt-2">File upload is not available in this demo.</p>
-                        </div>
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-card px-2 text-muted-foreground">
-                                Or
-                                </span>
-                            </div>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="avatar-prompt">Generate with AI</Label>
-                            <Input id="avatar-prompt" placeholder="e.g., 'A tranquil forest scene'" value={avatarPrompt} onChange={e => setAvatarPrompt(e.target.value)} />
-                        </div>
-                        <Button onClick={handleGenerateAvatar} disabled={isGenerating} className="w-full">
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            {isGenerating ? 'Generating...' : 'Generate Avatar'}
-                        </Button>
-                     </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Theme</CardTitle>
-                    <CardDescription>
-                        Choose a color palette for your app.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="theme-select" className="flex items-center gap-2"><Palette/> Select Theme</Label>
-                         <Select onValueChange={setSelectedTheme} value={selectedTheme}>
-                            <SelectTrigger id="theme-select">
-                                <SelectValue placeholder="Select a theme" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="rose-gold">Rose Gold</SelectItem>
-                                <SelectItem value="black-gold">Black Gold</SelectItem>
-                                <SelectItem value="brown-gold">Brown Gold</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <h2 className="text-xl font-bold">{username || "New User"}</h2>
+                    <p className="text-sm text-muted-foreground">{email}</p>
+                </div>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        />
                     </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSaveTheme}>
+                    <Button onClick={handleUpdateProfile} className="w-full">
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Profile
+                    </Button>
+                </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="md:col-span-2 p-6 lg:p-8 space-y-8">
+                <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-2"><Sparkles className="text-primary"/> AI Avatar Generator</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Generate a unique profile picture based on a text prompt.</p>
+                     <div className="space-y-2">
+                        <Label htmlFor="avatar-prompt">Your Prompt</Label>
+                        <div className="flex items-center gap-2">
+                            <Input id="avatar-prompt" placeholder="e.g., 'A tranquil forest scene'" value={avatarPrompt} onChange={e => setAvatarPrompt(e.target.value)} />
+                             <Button onClick={handleGenerateAvatar} disabled={isGenerating} className="whitespace-nowrap">
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                {isGenerating ? 'Generating...' : 'Generate'}
+                            </Button>
+                        </div>
+                     </div>
+                </div>
+                
+                <Separator/>
+
+                <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-2"><Palette className="text-primary"/> App Theme</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Select a color palette that inspires you.</p>
+                     <div className="space-y-4">
+                        {themes.map(theme => (
+                             <div 
+                                key={theme.value}
+                                onClick={() => setSelectedTheme(theme.value)}
+                                className={cn(
+                                    "flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all",
+                                    selectedTheme === theme.value ? "border-primary ring-2 ring-primary/50" : "border-border hover:border-primary/50"
+                                )}
+                            >
+                                <span className="font-medium">{theme.name}</span>
+                                <div className="flex items-center gap-2">
+                                    {theme.colors.map((color, i) => (
+                                        <div key={i} className={cn("h-6 w-6 rounded-full", color)}></div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                     <Button onClick={handleSaveTheme} className="mt-6">
                         <Save className="mr-2 h-4 w-4" />
                         Save Theme
                     </Button>
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 
