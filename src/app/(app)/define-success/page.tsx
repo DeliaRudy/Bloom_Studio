@@ -33,11 +33,11 @@ const facetsOfLife = [
 
 type SuccessMetric = {
     text: string;
-    facet: string | null;
+    facets: string[];
 };
 
 export default function DefineSuccessPage() {
-  const [entries, setEntries] = React.useState<SuccessMetric[]>(Array(5).fill({ text: "", facet: null }));
+  const [entries, setEntries] = React.useState<SuccessMetric[]>(Array(5).fill(null).map(() => ({ text: "", facets: [] })));
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
 
@@ -70,9 +70,16 @@ export default function DefineSuccessPage() {
   
   const handleFacetClick = (facet: string) => {
     const newEntries = [...entries];
-    // Toggle facet: if it's already selected for the current entry, deselect it. Otherwise, select it.
-    const currentFacet = newEntries[current].facet;
-    newEntries[current].facet = currentFacet === facet ? null : facet;
+    const currentFacets = newEntries[current].facets;
+    const facetIndex = currentFacets.indexOf(facet);
+
+    if (facetIndex > -1) {
+      // Facet is already selected, so remove it
+      newEntries[current].facets = currentFacets.filter(f => f !== facet);
+    } else {
+      // Facet is not selected, so add it
+      newEntries[current].facets = [...currentFacets, facet];
+    }
     setEntries(newEntries);
   }
 
@@ -109,7 +116,7 @@ export default function DefineSuccessPage() {
                 {facetsOfLife.map(facet => (
                     <Badge 
                         key={facet} 
-                        variant={currentMetric?.facet === facet ? "default" : "outline"}
+                        variant={currentMetric?.facets.includes(facet) ? "default" : "outline"}
                         onClick={() => handleFacetClick(facet)}
                         className="cursor-pointer transition-colors"
                     >
@@ -132,11 +139,15 @@ export default function DefineSuccessPage() {
               <div className="p-1">
                 <Card>
                   <CardHeader className="pt-4 pb-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between min-h-[24px]">
                          <Label htmlFor={`success-entry-${index}`} className="text-lg font-medium">
                             Metric #{index + 1}
                         </Label>
-                        {entry.facet && <Badge variant="secondary">{entry.facet}</Badge>}
+                        <div className="flex flex-wrap gap-1 justify-end">
+                            {entry.facets.map(facet => (
+                               <Badge key={facet} variant="secondary">{facet}</Badge>
+                            ))}
+                        </div>
                     </div>
                   </CardHeader>
                   <CardContent className="flex flex-col aspect-video items-center justify-center p-6 pt-2 gap-4">
