@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { PageHeader } from "@/components/page-header";
-import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirebase, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import {
   DailyPlan,
@@ -79,7 +79,7 @@ function getScoreEmoji(score: number): string {
 }
 
 function DashboardClient() {
-  const { firestore, user } = useFirebase();
+  const { firestore, user, isUserLoading } = useFirebase();
   const [stats, setStats] = React.useState({
     avgDailyTasks: 0,
     avgWeeklyGoals: 0,
