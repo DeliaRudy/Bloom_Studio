@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -99,7 +100,12 @@ export default function CycleTrackerPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <div className="grid grid-cols-13 gap-x-2 gap-y-1 min-w-[800px]">
+            <div 
+                className="grid gap-x-2 gap-y-1 min-w-[800px]"
+                style={{
+                    gridTemplateColumns: '30px repeat(12, 1fr)',
+                }}
+            >
               {/* Header */}
               <div />
               {months.map((month) => (
@@ -111,7 +117,7 @@ export default function CycleTrackerPage() {
               {/* Days */}
               {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                 <React.Fragment key={day}>
-                  <div className="text-center font-bold text-sm text-muted-foreground">{day}</div>
+                  <div className="text-center font-bold text-sm text-muted-foreground flex items-center justify-center">{day}</div>
                   {months.map((_, monthIndex) => {
                     if (day > daysInMonth(monthIndex, currentYear)) {
                       return <div key={monthIndex} />;
