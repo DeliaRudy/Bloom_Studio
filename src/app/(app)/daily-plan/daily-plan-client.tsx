@@ -219,7 +219,7 @@ export function DailyPlanClient() {
             </Tabs>
         </div>
 
-      <Carousel setApi={setApi} className="w-full">
+      <Carousel setApi={setApi} className="w-full" opts={{ loop: true }}>
          <div className="flex justify-between items-center mb-4 px-12">
             <div className="flex items-center gap-4">
                 <BookOpenCheck className="w-8 h-8 text-primary" />
@@ -229,9 +229,9 @@ export function DailyPlanClient() {
                 </div>
             </div>
             <div className="flex items-center gap-4">
-                <div className="text-center w-64">
-                    <p className="text-lg font-semibold text-primary">{format(currentDay, "EEEE, do MMMM yyyy")}</p>
-                </div>
+                 <CarouselPrevious className="relative -left-0 top-0 translate-y-0" />
+                <p className="text-lg font-semibold text-primary w-72 text-center">{format(currentDay, "EEEE, do MMMM yyyy")}</p>
+                 <CarouselNext className="relative -right-0 top-0 translate-y-0" />
                 <Button variant="outline" onClick={handleGoToToday}>Today</Button>
             </div>
         </div>
@@ -281,8 +281,6 @@ export function DailyPlanClient() {
         <div className="flex justify-end mb-4">
              <Button onClick={handleSave}>Save All Plans</Button>
         </div>
-        <CarouselPrevious />
-        <CarouselNext />
         <CarouselContent>
           {daysOfYear.map((day, index) => {
             const plan = getPlanForDay(day);
