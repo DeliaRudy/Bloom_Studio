@@ -33,6 +33,7 @@ import {
   CalendarPlus,
   CalendarDays,
   ClipboardList,
+  BookOpenCheck,
 } from "lucide-react"
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
@@ -57,6 +58,7 @@ const plansLinks = [
     { href: "/month-map", label: "Month Map", icon: CalendarHeart },
     { href: "/month-planner", label: "Month Planner", icon: CalendarPlus },
     { href: "/week-planner", label: "Week Planner", icon: CalendarDays },
+    { href: "/daily-plan", label: "Daily Plan", icon: BookOpenCheck },
 ]
 
 export function SidebarNav() {

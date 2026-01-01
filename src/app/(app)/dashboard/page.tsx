@@ -18,6 +18,7 @@ import {
   CalendarPlus,
   CalendarDays,
   ClipboardList,
+  BookOpenCheck,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -117,6 +118,12 @@ const features = [
     title: "Week Planner",
     description: "Plan your week in detail.",
     icon: CalendarDays,
+  },
+  {
+    href: "/daily-plan",
+    title: "Daily Plan",
+    description: "Plan your day in detail.",
+    icon: BookOpenCheck,
   },
 ];
 
