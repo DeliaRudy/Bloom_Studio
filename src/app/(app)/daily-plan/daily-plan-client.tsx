@@ -3,14 +3,6 @@
 
 import * as React from 'react';
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  type CarouselApi,
-} from '@/components/ui/carousel';
-import {
   Card,
   CardContent,
   CardDescription,
@@ -24,16 +16,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
-  eachDayOfInterval,
-  startOfYear,
-  endOfYear,
   format,
   isToday,
-  differenceInDays,
-  getMonth,
   startOfWeek,
+  addDays,
+  subDays,
 } from 'date-fns';
-import { BookOpenCheck, Heart } from 'lucide-react';
+import { BookOpenCheck, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -72,14 +61,7 @@ const hours = Array.from({ length: 15 }, (_, i) =>
 ); // 6am to 8pm
 
 export function DailyPlanClient() {
-  const currentYear = new Date();
-  const daysOfYear = eachDayOfInterval({
-    start: startOfYear(currentYear),
-    end: endOfYear(currentYear),
-  });
-
-  const [api, setApi] = React.useState<CarouselApi>();
-  const [current, setCurrent] = React.useState(0);
+  const [currentDay, setCurrentDay] = React.useState(new Date());
   const [dailyPlans, setDailyPlans] = React.useState<Record<string, DailyPlan>>(
     {}
   );
@@ -94,7 +76,7 @@ export function DailyPlanClient() {
   React.useEffect(() => {
     // Load data from local storage
     const savedPlans = localStorage.getItem(
-      `dailyPlans${currentYear.getFullYear()}`
+      `dailyPlans${currentDay.getFullYear()}`
     );
     if (savedPlans) {
       setDailyPlans(JSON.parse(savedPlans));
@@ -111,37 +93,13 @@ export function DailyPlanClient() {
     const savedBigGoalYear = localStorage.getItem('bigGoal');
     setBigGoalYear(savedBigGoalYear || 'Not set yet');
 
-    if (!api) return;
+    const monthlyGoalsData = localStorage.getItem('monthlyBigGoal');
+    setBigGoalMonth(monthlyGoalsData || 'Not set yet');
 
-    const today = new Date();
-    let initialSlide = 0;
-    if (today.getFullYear() === currentYear.getFullYear()) {
-      initialSlide = differenceInDays(today, startOfYear(currentYear));
-    }
-
-    api.scrollTo(initialSlide, true);
-    setCurrent(api.selectedScrollSnap());
-
-    const onSelect = () => {
-      const selectedIndex = api.selectedScrollSnap();
-      setCurrent(selectedIndex);
-      const selectedDate = daysOfYear[selectedIndex];
-
-      const monthIndex = getMonth(selectedDate);
-      const monthlyGoalsData = localStorage.getItem('monthlyBigGoal');
-      setBigGoalMonth(monthlyGoalsData || 'Not set yet');
-
-      const weekKey = format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      const savedWeeklyGoals = JSON.parse(localStorage.getItem('weeklyGoals') || '{}');
-      setBigGoalWeek(savedWeeklyGoals[weekKey]?.bigGoal || 'Not set yet');
-    };
-
-    api.on('select', onSelect);
-    onSelect(); // initial call
-    return () => {
-      api.off('select', onSelect);
-    };
-  }, [api, currentYear, daysOfYear]);
+    const weekKey = format(startOfWeek(currentDay, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const savedWeeklyGoals = JSON.parse(localStorage.getItem('weeklyGoals') || '{}');
+    setBigGoalWeek(savedWeeklyGoals[weekKey]?.bigGoal || 'Not set yet');
+  }, [currentDay]);
 
   const getPlanForDay = (date: Date): DailyPlan => {
     const dateString = format(date, 'yyyy-MM-dd');
@@ -181,12 +139,12 @@ export function DailyPlanClient() {
 
   const handleSave = () => {
     localStorage.setItem(
-      `dailyPlans${currentYear.getFullYear()}`,
+      `dailyPlans${currentDay.getFullYear()}`,
       JSON.stringify(dailyPlans)
     );
     toast({
       title: 'Daily Plans Saved!',
-      description: `Your plans for ${currentYear.getFullYear()} have been saved locally.`,
+      description: `Your plans for ${currentDay.getFullYear()} have been saved locally.`,
     });
   };
 
@@ -234,24 +192,15 @@ export function DailyPlanClient() {
     updatePlanForDay(date, { habits: newHabits });
   };
 
-  const handleGoToToday = () => {
-    const today = new Date();
-    if (today.getFullYear() !== currentYear.getFullYear()) {
-      toast({
-        title: 'Outside Range',
-        description: `Today's date is not in ${currentYear.getFullYear()}.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    const todayIndex = differenceInDays(today, startOfYear(currentYear));
-    if (api) {
-      api.scrollTo(todayIndex);
-    }
-  };
-
-  const currentDay = daysOfYear[current] || new Date();
   const planForCurrentDay = getPlanForDay(currentDay);
+  const completedHabits = Object.values(planForCurrentDay.habits).filter(
+    Boolean
+  ).length;
+  const totalHabits = dailyHabits.length;
+  const disciplinePercentage =
+    totalHabits > 0
+      ? Math.round((completedHabits / totalHabits) * 100)
+      : 0;
 
   return (
     <div>
@@ -276,31 +225,34 @@ export function DailyPlanClient() {
         </Tabs>
       </div>
 
-      <Carousel setApi={setApi} className="w-full" opts={{ loop: false, align: 'start' }}>
-        <div className="flex justify-between items-center mb-4 px-1">
-          <div className="flex items-center gap-4">
-            <BookOpenCheck className="w-8 h-8 text-primary" />
-            <div>
-              <h2 className="font-headline text-2xl font-bold">DAILY PLAN</h2>
-              <p className="text-muted-foreground text-sm">
-                Designed to instill intentional habits, reinforce discipline,
-                and measure daily consistency.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <CarouselPrevious className="relative -left-0 top-0 translate-y-0" />
-            <p className="text-lg font-semibold text-primary w-72 text-center">
-              {format(currentDay, 'EEEE, do MMMM yyyy')}
+      <div className="flex justify-between items-center mb-4 px-1">
+        <div className="flex items-center gap-4">
+          <BookOpenCheck className="w-8 h-8 text-primary" />
+          <div>
+            <h2 className="font-headline text-2xl font-bold">DAILY PLAN</h2>
+            <p className="text-muted-foreground text-sm">
+              Designed to instill intentional habits, reinforce discipline,
+              and measure daily consistency.
             </p>
-            <CarouselNext className="relative -right-0 top-0 translate-y-0" />
-            <Button variant="outline" onClick={handleGoToToday}>
-              Today
-            </Button>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+           <Button variant="outline" size="icon" onClick={() => setCurrentDay(subDays(currentDay, 1))}>
+              <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <p className="text-lg font-semibold text-primary w-72 text-center">
+            {format(currentDay, 'EEEE, do MMMM yyyy')}
+          </p>
+          <Button variant="outline" size="icon" onClick={() => setCurrentDay(addDays(currentDay, 1))}>
+              <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" onClick={() => setCurrentDay(new Date())}>
+            Today
+          </Button>
+        </div>
+      </div>
 
-        <Card className="mb-6">
+      <Card className="mb-6">
           <CardHeader>
             <CardTitle>High-Level Focus</CardTitle>
           </CardHeader>
@@ -344,255 +296,239 @@ export function DailyPlanClient() {
           </CardContent>
         </Card>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-base text-primary">
-              Today&apos;s Big Goal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Enter the most important result for today"
-              value={planForCurrentDay.todaysBigGoal}
-              onChange={(e) =>
-                handleGenericChange(currentDay, 'todaysBigGoal', e.target.value)
-              }
-              rows={1}
-            />
-          </CardContent>
-        </Card>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base text-primary">
+            Today&apos;s Big Goal
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            placeholder="Enter the most important result for today"
+            value={planForCurrentDay.todaysBigGoal}
+            onChange={(e) =>
+              handleGenericChange(currentDay, 'todaysBigGoal', e.target.value)
+            }
+            rows={1}
+          />
+        </CardContent>
+      </Card>
+      <div className="flex justify-end mb-4">
+        <Button onClick={handleSave}>Save All Plans</Button>
+      </div>
 
-        <div className="flex justify-end mb-4">
-          <Button onClick={handleSave}>Save All Plans</Button>
-        </div>
-        <CarouselContent>
-          {daysOfYear.map((day, index) => {
-            const plan = getPlanForDay(day);
-            const completedHabits = Object.values(plan.habits).filter(
-              Boolean
-            ).length;
-            const totalHabits = dailyHabits.length;
-            const disciplinePercentage =
-              totalHabits > 0
-                ? Math.round((completedHabits / totalHabits) * 100)
-                : 0;
-            return (
-              <CarouselItem key={index}>
-                <div className="p-1">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                    <div className="space-y-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Top 3 Priorities</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {plan.priorities.map((p) => (
-                            <div key={p.id} className="flex items-center gap-3">
-                              <Checkbox
-                                id={`${day.toISOString()}-${p.id}`}
-                                checked={p.completed}
-                                onCheckedChange={(checked) =>
-                                  handlePriorityChange(
-                                    day,
-                                    p.id,
-                                    'completed',
-                                    !!checked
-                                  )
-                                }
-                              />
-                              <Input
-                                value={p.text}
-                                onChange={(e) =>
-                                  handlePriorityChange(
-                                    day,
-                                    p.id,
-                                    'text',
-                                    e.target.value
-                                  )
-                                }
-                                className={cn('h-9',
-                                  p.completed
-                                    ? 'line-through text-muted-foreground'
-                                    : ''
-                                )}
-                              />
-                            </div>
-                          ))}
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Daily Discipline Checklist</CardTitle>
-                          <CardDescription className="flex items-center gap-2 pt-2 text-primary">
-                            <Heart className="w-8 h-8 text-primary" />
-                            <span className="text-lg font-bold">
-                              {completedHabits} / {totalHabits}
-                            </span>
-                            <span className="text-lg">
-                              &mdash; {disciplinePercentage}% discipline
-                            </span>
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          {dailyHabits.length > 0 ? (
-                            <div className="space-y-2">
-                              {dailyHabits.map((habit) => (
-                                <div
-                                  key={habit}
-                                  className="flex items-center gap-3 cursor-pointer rounded-md p-2 hover:bg-muted/50"
-                                  onClick={() => handleHabitToggle(day, habit)}
-                                >
-                                  <Checkbox checked={plan.habits[habit]} />
-                                  <span
-                                    className={cn(
-                                      'text-sm',
-                                      plan.habits[habit] &&
-                                        'line-through text-muted-foreground'
-                                    )}
-                                  >
-                                    {habit}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                              No daily habits defined yet. Go to the{' '}
-                               <Link href="/daily-habits" className="underline font-semibold">Daily Habits</Link> page to add some.
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                    <div className="space-y-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-primary font-headline">
-                            Schedule for the Day
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 px-4 py-2">
-                            <Label className="font-semibold">Time</Label>
-                            <Label className="font-semibold">Task</Label>
-                            <Label className="font-semibold">Notes</Label>
-                            <Label className="font-semibold text-right pr-2">Priority</Label>
-                          </div>
-                          <Separator />
-                          <div className="max-h-[480px] overflow-y-auto pr-2">
-                            {hours.map((hour, hourIndex) => {
-                              const time = new Date(`1970-01-01T${hour}`);
-                              return (
-                                <div key={hour} className={cn("grid grid-cols-[auto_1fr_1fr_auto] items-center gap-x-4 px-2 rounded-md", hourIndex % 2 === 0 ? 'bg-muted/30' : '')}>
-                                  <Label className="font-semibold text-primary w-20 py-3 text-center">
-                                    {format(time, 'h:mm a')}
-                                  </Label>
-                                  <Input
-                                    value={plan.schedule[hour]?.task || ''}
-                                    onChange={(e) =>
-                                      handleScheduleChange(
-                                        day,
-                                        hour,
-                                        'task',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="Task/Activity"
-                                    className="bg-transparent border-0 border-b rounded-none"
-                                  />
-                                  <Input
-                                    value={plan.schedule[hour]?.notes || ''}
-                                    onChange={(e) =>
-                                      handleScheduleChange(
-                                        day,
-                                        hour,
-                                        'notes',
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="Notes..."
-                                    className="bg-transparent border-0 border-b rounded-none"
-                                  />
-                                  <Select
-                                    value={
-                                      plan.schedule[hour]?.priority || 'Medium'
-                                    }
-                                    onValueChange={(
-                                      value: 'High' | 'Medium' | 'Low'
-                                    ) =>
-                                      handleScheduleChange(
-                                        day,
-                                        hour,
-                                        'priority',
-                                        value
-                                      )
-                                    }
-                                  >
-                                    <SelectTrigger className="w-28 border-0 bg-transparent focus:ring-0 focus:ring-offset-0">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="High">High</SelectItem>
-                                      <SelectItem value="Medium">
-                                        Medium
-                                      </SelectItem>
-                                      <SelectItem value="Low">Low</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Gratitude</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <Textarea
-                              rows={4}
-                              placeholder="What are you grateful for today?"
-                              value={plan.gratitude}
-                              onChange={(e) =>
-                                handleGenericChange(
-                                  day,
-                                  'gratitude',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>End-of-Day Reflection</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <Textarea
-                              rows={4}
-                              placeholder="How did today go? What did you learn?"
-                              value={plan.reflection}
-                              onChange={(e) =>
-                                handleGenericChange(
-                                  day,
-                                  'reflection',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 3 Priorities</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {planForCurrentDay.priorities.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3">
+                    <Checkbox
+                      id={`${currentDay.toISOString()}-${p.id}`}
+                      checked={p.completed}
+                      onCheckedChange={(checked) =>
+                        handlePriorityChange(
+                          currentDay,
+                          p.id,
+                          'completed',
+                          !!checked
+                        )
+                      }
+                    />
+                    <Input
+                      value={p.text}
+                      onChange={(e) =>
+                        handlePriorityChange(
+                          currentDay,
+                          p.id,
+                          'text',
+                          e.target.value
+                        )
+                      }
+                      className={cn('h-9',
+                        p.completed
+                          ? 'line-through text-muted-foreground'
+                          : ''
+                      )}
+                    />
                   </div>
-                </div>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-      </Carousel>
+                ))}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Daily Discipline Checklist</CardTitle>
+                <CardDescription className="flex items-center gap-2 pt-2 text-primary">
+                  <Heart className="w-8 h-8 text-primary" />
+                  <span className="text-lg font-bold">
+                    {completedHabits} / {totalHabits}
+                  </span>
+                  <span className="text-lg">
+                    &mdash; {disciplinePercentage}% discipline
+                  </span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {dailyHabits.length > 0 ? (
+                  <div className="space-y-2">
+                    {dailyHabits.map((habit) => (
+                      <div
+                        key={habit}
+                        className="flex items-center gap-3 cursor-pointer rounded-md p-2 hover:bg-muted/50"
+                        onClick={() => handleHabitToggle(currentDay, habit)}
+                      >
+                        <Checkbox checked={planForCurrentDay.habits[habit]} />
+                        <span
+                          className={cn(
+                            'text-sm',
+                            planForCurrentDay.habits[habit] &&
+                              'line-through text-muted-foreground'
+                          )}
+                        >
+                          {habit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No daily habits defined yet. Go to the{' '}
+                     <Link href="/daily-habits" className="underline font-semibold">Daily Habits</Link> page to add some.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary font-headline">
+                  Schedule for the Day
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                 <div className="relative w-full overflow-auto">
+                    <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 px-4 py-2">
+                      <Label className="font-semibold">Time</Label>
+                      <Label className="font-semibold">Task</Label>
+                      <Label className="font-semibold">Notes</Label>
+                      <Label className="font-semibold text-right pr-2">Priority</Label>
+                    </div>
+                    <Separator />
+                    <div className="max-h-[480px] overflow-y-auto pr-2">
+                      {hours.map((hour, hourIndex) => {
+                        const time = new Date(`1970-01-01T${hour}`);
+                        return (
+                          <div key={hour} className={cn("grid grid-cols-[auto_1fr_1fr_auto] items-center gap-x-4 px-2 rounded-md", hourIndex % 2 === 0 ? 'bg-muted/30' : '')}>
+                            <Label className="font-semibold text-primary w-20 py-3 text-center">
+                              {format(time, 'h:mm a')}
+                            </Label>
+                            <Input
+                              value={planForCurrentDay.schedule[hour]?.task || ''}
+                              onChange={(e) =>
+                                handleScheduleChange(
+                                  currentDay,
+                                  hour,
+                                  'task',
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Task/Activity"
+                              className="bg-transparent border-0 border-b rounded-none"
+                            />
+                            <Input
+                              value={planForCurrentDay.schedule[hour]?.notes || ''}
+                              onChange={(e) =>
+                                handleScheduleChange(
+                                  currentDay,
+                                  hour,
+                                  'notes',
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Notes..."
+                              className="bg-transparent border-0 border-b rounded-none"
+                            />
+                            <Select
+                              value={
+                                planForCurrentDay.schedule[hour]?.priority || 'Medium'
+                              }
+                              onValueChange={(
+                                value: 'High' | 'Medium' | 'Low'
+                              ) =>
+                                handleScheduleChange(
+                                  currentDay,
+                                  hour,
+                                  'priority',
+                                  value
+                                )
+                              }
+                            >
+                              <SelectTrigger className="w-28 border-0 bg-transparent focus:ring-0 focus:ring-offset-0">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="High">High</SelectItem>
+                                <SelectItem value="Medium">
+                                  Medium
+                                </SelectItem>
+                                <SelectItem value="Low">Low</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                 </div>
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gratitude</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    rows={4}
+                    placeholder="What are you grateful for today?"
+                    value={planForCurrentDay.gratitude}
+                    onChange={(e) =>
+                      handleGenericChange(
+                        currentDay,
+                        'gratitude',
+                        e.target.value
+                      )
+                    }
+                  />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>End-of-Day Reflection</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    rows={4}
+                    placeholder="How did today go? What did you learn?"
+                    value={planForCurrentDay.reflection}
+                    onChange={(e) =>
+                      handleGenericChange(
+                        currentDay,
+                        'reflection',
+                        e.target.value
+                      )
+                    }
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
     </div>
   );
 }
+
+    
