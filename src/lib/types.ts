@@ -13,4 +13,16 @@ export type SuccessDefinition = {
     sessionID: string;
 };
 
+export type CycleDay = {
+    id: string; // YYYY-MM-DD
+    flow: 'none' | 'light' | 'medium' | 'heavy';
+    notes: CycleNote[];
+};
+
+export type CycleNote = {
+    id: string;
+    text: string;
+    createdAt: string; // ISO string
+};
+
 // Add other types from backend.json here as needed
