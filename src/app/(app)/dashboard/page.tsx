@@ -27,16 +27,16 @@ const features = [
     icon: Calendar,
   },
   {
+    href: "/vision-statement",
+    title: "My Big Goal",
+    description: "Craft a powerful statement for your future.",
+    icon: Quote,
+  },
+  {
     href: "/action-plan",
     title: "Action Plan",
     description: "Create actionable steps for your goals.",
     icon: ListChecks,
-  },
-  {
-    href: "/vision-statement",
-    title: "Vision Statement",
-    description: "Craft a powerful statement for your future.",
-    icon: Quote,
   },
   {
     href: "/vision-board",

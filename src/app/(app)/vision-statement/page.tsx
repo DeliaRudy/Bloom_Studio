@@ -42,7 +42,7 @@ export default function VisionStatementPage() {
   return (
     <div>
       <PageHeader
-        title="Vision Statement & 12-Month Goal"
+        title="My Big Goal"
         description="Solidify your vision with a powerful statement and choose one major goal to focus on for the next year."
       />
       <Card>
