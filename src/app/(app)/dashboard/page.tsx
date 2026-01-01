@@ -22,6 +22,7 @@ import {
   BookOpenCheck,
   Settings,
   Droplets,
+  Bell,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -133,6 +134,12 @@ const features = [
     title: "Cycle Tracker",
     description: "Track your menstrual cycle.",
     icon: Droplets,
+  },
+  {
+    href: "/notifications",
+    title: "Notifications",
+    description: "View your latest updates and reminders.",
+    icon: Bell,
   },
   {
     href: "/settings",

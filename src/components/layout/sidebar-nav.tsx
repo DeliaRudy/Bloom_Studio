@@ -35,6 +35,7 @@ import {
   BookOpenCheck,
   Settings,
   Droplets,
+  Bell,
 } from "lucide-react"
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
@@ -167,6 +168,20 @@ export function SidebarNav() {
                 >
                   <Sparkles className="h-5 w-5" />
                   <span>AI Reflection</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+
+             <SidebarMenuItem>
+              <Link href="/notifications">
+                <SidebarMenuButton
+                  isActive={pathname === "/notifications"}
+                  tooltip={{
+                    children: "Notifications",
+                  }}
+                >
+                  <Bell className="h-5 w-5" />
+                  <span>Notifications</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
