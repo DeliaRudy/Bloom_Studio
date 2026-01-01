@@ -14,10 +14,21 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { PlusCircle, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+
+type Entry = {
+  id: string;
+  text: string;
+};
 
 export default function AffirmationsGratitudePage() {
-  const [affirmations, setAffirmations] = React.useState("");
-  const [gratitude, setGratitude] = React.useState("");
+  const [affirmations, setAffirmations] = React.useState<Entry[]>([
+    { id: "aff1", text: "I am capable of achieving my dreams." },
+  ]);
+  const [gratitude, setGratitude] = React.useState<Entry[]>([
+    { id: "gra1", text: "I am grateful for my supportive family." },
+  ]);
   const { toast } = useToast();
 
   const handleSave = () => {
@@ -28,6 +39,20 @@ export default function AffirmationsGratitudePage() {
       description: "Your affirmations and gratitude have been saved.",
     });
   };
+
+  const addEntry = (list: Entry[], setList: React.Dispatch<React.SetStateAction<Entry[]>>) => {
+    const newEntry: Entry = { id: `${list.length}-${Date.now()}`, text: "" };
+    setList([...list, newEntry]);
+  };
+
+  const updateEntry = (id: string, text: string, list: Entry[], setList: React.Dispatch<React.SetStateAction<Entry[]>>) => {
+    setList(list.map(entry => (entry.id === id ? { ...entry, text } : entry)));
+  };
+
+  const removeEntry = (id: string, list: Entry[], setList: React.Dispatch<React.SetStateAction<Entry[]>>) => {
+    setList(list.filter(entry => entry.id !== id));
+  };
+
 
   return (
     <div>
@@ -45,19 +70,22 @@ export default function AffirmationsGratitudePage() {
               yourself.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="affirmations" className="sr-only">
-                Affirmations
-              </Label>
-              <Textarea
-                id="affirmations"
-                placeholder="e.g., 'I am capable of achieving my dreams.' 'I attract positivity and success.'"
-                value={affirmations}
-                onChange={(e) => setAffirmations(e.target.value)}
-                className="resize-none h-60"
-              />
-            </div>
+          <CardContent className="space-y-4">
+             {affirmations.map((affirmation) => (
+              <div key={affirmation.id} className="flex items-center gap-2">
+                <Input
+                  value={affirmation.text}
+                  onChange={(e) => updateEntry(affirmation.id, e.target.value, affirmations, setAffirmations)}
+                  placeholder="e.g., 'I attract positivity...'"
+                />
+                <Button variant="ghost" size="icon" onClick={() => removeEntry(affirmation.id, affirmations, setAffirmations)}>
+                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                </Button>
+              </div>
+            ))}
+            <Button variant="outline" className="w-full" onClick={() => addEntry(affirmations, setAffirmations)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Affirmation
+            </Button>
           </CardContent>
         </Card>
 
@@ -69,19 +97,22 @@ export default function AffirmationsGratitudePage() {
               improve your well-being.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="gratitude" className="sr-only">
-                Gratitude
-              </Label>
-              <Textarea
-                id="gratitude"
-                placeholder="e.g., 'I am grateful for my supportive family.' 'I am grateful for the sunny weather today.'"
-                value={gratitude}
-                onChange={(e) => setGratitude(e.target.value)}
-                className="resize-none h-60"
-              />
-            </div>
+          <CardContent className="space-y-4">
+            {gratitude.map((item) => (
+                <div key={item.id} className="flex items-center gap-2">
+                    <Input
+                    value={item.text}
+                    onChange={(e) => updateEntry(item.id, e.target.value, gratitude, setGratitude)}
+                    placeholder="e.g., 'The sunny weather...'"
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => removeEntry(item.id, gratitude, setGratitude)}>
+                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    </Button>
+                </div>
+            ))}
+             <Button variant="outline" className="w-full" onClick={() => addEntry(gratitude, setGratitude)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Gratitude
+            </Button>
           </CardContent>
         </Card>
       </div>
