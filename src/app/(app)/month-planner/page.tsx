@@ -166,34 +166,6 @@ export default function MonthPlannerPage() {
             </blockquote>
         </CardContent>
       </Card>
-      
-       <Card>
-        <CardContent className="p-2">
-           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {months.map((monthName, i) => {
-                    const monthDate = new Date(currentMonth.getFullYear(), i, 1);
-                    return (
-                        <div key={monthName} className="text-center">
-                            <h4 className="font-semibold text-sm mb-1">{monthName}</h4>
-                            <Calendar
-                                month={monthDate}
-                                numberOfMonths={1}
-                                classNames={{
-                                    root: "w-full",
-                                    caption_label: "text-sm",
-                                    head_cell: "w-full h-6 text-xs",
-                                    cell: "h-6 w-full text-xs p-0",
-                                    day: "h-6 w-full text-xs",
-                                    nav: "hidden"
-                                }}
-                            />
-                        </div>
-                    );
-                })}
-            </div>
-        </CardContent>
-      </Card>
-
 
       <div className="flex justify-end mt-8">
         <Button size="lg" onClick={handleSave}>
