@@ -69,6 +69,15 @@ export default function MonthPlannerPage() {
     const savedLifeRules = localStorage.getItem("personaWhy");
     if (savedLifeRules) setLifeRules(JSON.parse(savedLifeRules).filter((r: string) => r));
 
+    const savedSelectedStartHabit = localStorage.getItem("selectedStartHabit");
+    if (savedSelectedStartHabit) setSelectedStartHabit(savedSelectedStartHabit);
+
+    const savedSelectedStopHabit = localStorage.getItem("selectedStopHabit");
+    if (savedSelectedStopHabit) setSelectedStopHabit(savedSelectedStopHabit);
+
+    const savedSelectedLifeRules = localStorage.getItem("selectedLifeRules");
+    if (savedSelectedLifeRules) setSelectedLifeRules(JSON.parse(savedSelectedLifeRules));
+
   }, []);
 
   const handleToggleGoal = (id: string) => {
@@ -79,6 +88,20 @@ export default function MonthPlannerPage() {
     if (selectedMonthlyBigGoal) {
       localStorage.setItem("monthlyBigGoal", selectedMonthlyBigGoal);
     }
+    if (selectedStartHabit) {
+      localStorage.setItem("selectedStartHabit", selectedStartHabit);
+    } else {
+      localStorage.removeItem("selectedStartHabit");
+    }
+
+    if (selectedStopHabit) {
+      localStorage.setItem("selectedStopHabit", selectedStopHabit);
+    } else {
+      localStorage.removeItem("selectedStopHabit");
+    }
+
+    localStorage.setItem("selectedLifeRules", JSON.stringify(selectedLifeRules));
+
     console.log("Saving Monthly Planner Data...");
     toast({
         title: "Planner Saved!",
@@ -332,5 +355,7 @@ export default function MonthPlannerPage() {
     </div>
   );
 }
+
+    
 
     

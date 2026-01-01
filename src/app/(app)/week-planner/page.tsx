@@ -61,14 +61,24 @@ export default function WeekPlannerPage() {
 
   React.useEffect(() => {
     const saved5YearVision = localStorage.getItem("5YearVision");
-    if (saved5YearVision) setFiveYearVision(saved5YearVision);
+    if (saved5YearVision) {
+        setFiveYearVision(saved5YearVision);
+    } else {
+        setFiveYearVision("");
+    }
 
     const savedBigGoal = localStorage.getItem("bigGoal");
-    if (savedBigGoal) setBigGoalYear(savedBigGoal);
+    if (savedBigGoal) {
+        setBigGoalYear(savedBigGoal);
+    } else {
+        setBigGoalYear("");
+    }
 
     const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
     if (savedMonthlyBigGoal) {
         setBigGoalMonth(savedMonthlyBigGoal);
+    } else {
+        setBigGoalMonth("");
     }
     
     const savedAffirmations = localStorage.getItem("affirmations");
@@ -78,6 +88,20 @@ export default function WeekPlannerPage() {
             setAvailableAffirmations(parsedAffirmations.filter(a => a.text));
         }
     }
+
+    const startHabit = localStorage.getItem("selectedStartHabit");
+    const stopHabit = localStorage.getItem("selectedStopHabit");
+
+    let habitsText = "";
+    if(startHabit) habitsText += `Start: ${startHabit}\n`;
+    if(stopHabit) habitsText += `Stop: ${stopHabit}`;
+
+    if(!startHabit && !stopHabit) {
+        setHabits("Not set yet");
+    } else {
+        setHabits(habitsText.trim());
+    }
+
   }, [week]);
 
   const weekStart = startOfWeek(week, { weekStartsOn: 1 });
@@ -255,7 +279,7 @@ export default function WeekPlannerPage() {
             <Card>
                 <CardHeader><CardTitle>Habits for the Week</CardTitle></CardHeader>
                 <CardContent>
-                     <Textarea value={habits} onChange={e => setHabits(e.target.value)} placeholder="What habits are you focusing on?" />
+                     <Textarea value={habits} readOnly disabled rows={3} placeholder="Not set yet"/>
                 </CardContent>
             </Card>
             <Card>
@@ -293,5 +317,7 @@ export default function WeekPlannerPage() {
     </div>
   );
 }
+
+    
 
     
