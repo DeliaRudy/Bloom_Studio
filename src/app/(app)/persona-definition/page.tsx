@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import * as React from "react";
+import { Label } from "@/components/ui/label";
 
 type Trait = {
     word: string;
@@ -17,6 +18,7 @@ type Trait = {
 export default function PersonaDefinitionPage() {
     const [reasons, setReasons] = React.useState(Array(5).fill(""));
     const [traits, setTraits] = React.useState<Trait[]>(Array(5).fill({ word: "", meaning: "" }));
+    const [philosophies, setPhilosophies] = React.useState("");
     const { toast } = useToast();
 
     const handleReasonChange = (index: number, value: string) => {
@@ -34,6 +36,7 @@ export default function PersonaDefinitionPage() {
     const handleSave = () => {
         console.log("Saving Persona Definition (Why):", reasons);
         console.log("Saving Persona Definition (Who):", traits);
+        console.log("Saving Personal Philosophies:", philosophies);
         toast({
             title: "Your Persona has been saved!",
             description: "Connecting with your reasons and traits is a huge step.",
@@ -99,6 +102,32 @@ export default function PersonaDefinitionPage() {
                             </div>
                         </div>
                     ))}
+                </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+                <CardHeader>
+                    <CardTitle className="font-headline">Personal Philosophies</CardTitle>
+                    <CardDescription>
+                        Define your personal philosophies, your own beliefs and opinions on the different facets of life. Defined philosophies give you clarity.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Label htmlFor="personal-philosophies">My Philosophies</Label>
+                        <Textarea
+                            id="personal-philosophies"
+                            placeholder="Write your philosophies here..."
+                            value={philosophies}
+                            onChange={(e) => setPhilosophies(e.target.value)}
+                            className="resize-none h-48 leading-loose bg-transparent"
+                             style={{
+                                backgroundImage: 'repeating-linear-gradient(to bottom, hsl(var(--border)) 0 1px, transparent 1px 2rem)',
+                                lineHeight: '2rem',
+                                backgroundAttachment: 'local'
+                            }}
+                        />
+                    </div>
                 </CardContent>
             </Card>
 
