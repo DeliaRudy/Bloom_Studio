@@ -23,11 +23,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { eachDayOfInterval, startOfYear, endOfYear, format, isToday, differenceInDays } from "date-fns";
-import { Heart } from "lucide-react";
+import { eachDayOfInterval, startOfYear, endOfYear, format, isToday, differenceInDays, getMonth } from "date-fns";
+import { BookOpenCheck, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type Priority = {
   id: string;
@@ -47,6 +49,8 @@ type DailyPlan = {
   reflection: string;
   gratitude: string;
   habits: Record<string, boolean>;
+  todaysBigGoal: string;
+  weeklyBigGoal: string;
 };
 
 const hours = Array.from({ length: 15 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`); // 6am to 8pm
@@ -63,6 +67,10 @@ export function DailyPlanClient() {
   const [dailyPlans, setDailyPlans] = React.useState<Record<string, DailyPlan>>({});
   const [dailyHabits, setDailyHabits] = React.useState<string[]>([]);
   const { toast } = useToast();
+
+  const [fiveYearVision, setFiveYearVision] = React.useState("");
+  const [bigGoalYear, setBigGoalYear] = React.useState("");
+  const [bigGoalMonth, setBigGoalMonth] = React.useState("");
   
   React.useEffect(() => {
     // Load data from local storage
@@ -76,6 +84,12 @@ export function DailyPlanClient() {
         setDailyHabits(parsedHabits.filter((h: string) => h && h.trim() !== ''));
     }
 
+    const saved5YearVision = localStorage.getItem("5YearVision");
+    setFiveYearVision(saved5YearVision || "not set yet");
+
+    const savedBigGoalYear = localStorage.getItem("bigGoal");
+    setBigGoalYear(savedBigGoalYear || "not set yet");
+    
     if (!api) return;
 
     const today = new Date();
@@ -84,28 +98,27 @@ export function DailyPlanClient() {
         initialSlide = differenceInDays(today, startOfYear(year2026));
     }
 
-    setCurrent(initialSlide);
     api.scrollTo(initialSlide, true);
+    setCurrent(api.selectedScrollSnap());
+
 
     const onSelect = () => {
-      setCurrent(api.selectedScrollSnap());
+      const selectedIndex = api.selectedScrollSnap();
+      setCurrent(selectedIndex);
+      const selectedDate = daysOf2026[selectedIndex];
+      const monthIndex = getMonth(selectedDate);
+      const monthlyGoals = JSON.parse(localStorage.getItem("monthlyGoals") || "[]");
+      setBigGoalMonth(monthlyGoals[monthIndex] || "not set yet");
     };
 
     api.on("select", onSelect);
+    onSelect(); // initial call
     return () => {
       api.off("select", onSelect);
     };
 
   }, [api]);
-
-  const handleSave = () => {
-    localStorage.setItem("dailyPlans2026", JSON.stringify(dailyPlans));
-    toast({
-      title: "Daily Plans Saved!",
-      description: "Your plans for 2026 have been saved locally.",
-    });
-  };
-
+  
   const getPlanForDay = (date: Date): DailyPlan => {
     const dateString = format(date, "yyyy-MM-dd");
     return dailyPlans[dateString] || {
@@ -118,6 +131,8 @@ export function DailyPlanClient() {
       reflection: "",
       gratitude: "",
       habits: dailyHabits.reduce((acc, habit) => ({...acc, [habit]: false}), {}),
+      todaysBigGoal: "",
+      weeklyBigGoal: "",
     };
   };
 
@@ -129,6 +144,15 @@ export function DailyPlanClient() {
         [dateString]: { ...existingPlan, ...newPlan }
     }));
   };
+
+  const handleSave = () => {
+    localStorage.setItem("dailyPlans2026", JSON.stringify(dailyPlans));
+    toast({
+      title: "Daily Plans Saved!",
+      description: "Your plans for 2026 have been saved locally.",
+    });
+  };
+
   
   const handlePriorityChange = (date: Date, id: string, field: 'text' | 'completed', value: string | boolean) => {
     const plan = getPlanForDay(date);
@@ -147,12 +171,8 @@ export function DailyPlanClient() {
       updatePlanForDay(date, { schedule: newSchedule });
   }
 
-  const handleReflectionChange = (date: Date, value: string) => {
-    updatePlanForDay(date, { reflection: value });
-  }
-
-  const handleGratitudeChange = (date: Date, value: string) => {
-    updatePlanForDay(date, { gratitude: value });
+  const handleGenericChange = (date: Date, field: "reflection" | "gratitude" | "todaysBigGoal" | "weeklyBigGoal", value: string) => {
+    updatePlanForDay(date, { [field]: value });
   }
   
   const handleHabitToggle = (date: Date, habit: string) => {
@@ -161,16 +181,104 @@ export function DailyPlanClient() {
       updatePlanForDay(date, { habits: newHabits });
   }
 
+  const handleGoToToday = () => {
+    const today = new Date();
+    if (today.getFullYear() !== 2026) {
+        toast({
+            title: "Outside Range",
+            description: "Today's date is not in 2026.",
+            variant: "destructive"
+        })
+        return;
+    }
+    const todayIndex = differenceInDays(today, startOfYear(year2026));
+    if (api) {
+        api.scrollTo(todayIndex);
+    }
+  }
+  
+  const currentDay = daysOf2026[current];
+  const planForCurrentDay = getPlanForDay(currentDay);
+
   return (
     <div>
-        <div className="flex justify-between items-center mb-4">
-            <div className="text-center">
-                <p className="font-semibold">{format(daysOf2026[current], "EEEE")}</p>
-                <p className="text-sm text-muted-foreground">{format(daysOf2026[current], "MMMM d, yyyy")}</p>
-            </div>
-            <Button onClick={handleSave}>Save All Plans</Button>
+        <div className="text-center mb-6">
+            <p className="max-w-2xl mx-auto text-muted-foreground">Turn your vision and annual goals into monthly, weekly, and daily strategy. Navigate with the tabs below to plan and execute your dreams!</p>
         </div>
+        <div className="flex justify-center mb-8">
+            <Tabs defaultValue="daily-plan">
+                <TabsList>
+                    <TabsTrigger value="monthly-plan" asChild><Link href="/month-planner">Monthly Plan</Link></TabsTrigger>
+                    <TabsTrigger value="weekly-plan" asChild><Link href="/week-planner">Weekly Plan</Link></TabsTrigger>
+                    <TabsTrigger value="daily-plan">Daily Plan</TabsTrigger>
+                </TabsList>
+            </Tabs>
+        </div>
+
       <Carousel setApi={setApi} className="w-full">
+         <div className="flex justify-between items-center mb-4 px-12">
+            <div className="flex items-center gap-4">
+                <BookOpenCheck className="w-8 h-8 text-primary" />
+                <div>
+                    <h2 className="font-headline text-2xl font-bold">DAILY PLAN</h2>
+                    <p className="text-muted-foreground text-sm">Designed to instill intentional habits, reinforce discipline, and measure daily consistency.</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                <CarouselPrevious />
+                <div className="text-center w-32">
+                    <p className="font-semibold text-lg">{format(currentDay, "MMMM")}</p>
+                    <p className="text-2xl font-bold text-primary">{format(currentDay, "do,")}</p>
+                    <p className="text-lg text-muted-foreground">{format(currentDay, "yyyy")}</p>
+                </div>
+                <CarouselNext />
+                <Button variant="outline" onClick={handleGoToToday}>Today</Button>
+            </div>
+        </div>
+
+        <Card className="mb-6">
+            <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="space-y-1 bg-muted/50 p-2 rounded-md">
+                    <p className="text-xs font-bold text-primary uppercase">5-Year Vision</p>
+                    <p className="text-xs font-semibold truncate" title={fiveYearVision}>{fiveYearVision}</p>
+                </div>
+                 <div className="space-y-1 bg-muted/50 p-2 rounded-md">
+                    <p className="text-xs font-bold text-primary uppercase">1-Year Big Goal</p>
+                    <p className="text-xs font-semibold truncate" title={bigGoalYear}>{bigGoalYear}</p>
+                </div>
+                 <div className="space-y-1 bg-muted/50 p-2 rounded-md">
+                    <p className="text-xs font-bold text-primary uppercase">Goal for the Month</p>
+                    <p className="text-xs font-semibold truncate" title={bigGoalMonth}>{bigGoalMonth}</p>
+                </div>
+                 <div className="space-y-1 bg-muted/50 p-2 rounded-md">
+                    <p className="text-xs font-bold text-primary uppercase">Weekly Big Goal</p>
+                    <Input 
+                        className="text-xs h-6 text-center font-semibold" 
+                        placeholder="not set yet"
+                        value={planForCurrentDay.weeklyBigGoal}
+                        onChange={e => handleGenericChange(currentDay, "weeklyBigGoal", e.target.value)}
+                    />
+                </div>
+            </CardContent>
+        </Card>
+        
+        <Card className="mb-6">
+            <CardHeader>
+                <CardTitle className="text-base text-primary">Today's Big Goal</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Textarea 
+                    placeholder="Enter the most important result for today"
+                    value={planForCurrentDay.todaysBigGoal}
+                    onChange={e => handleGenericChange(currentDay, "todaysBigGoal", e.target.value)}
+                    rows={1}
+                />
+            </CardContent>
+        </Card>
+
+        <div className="flex justify-end mb-4">
+             <Button onClick={handleSave}>Save All Plans</Button>
+        </div>
         <CarouselContent>
           {daysOf2026.map((day, index) => {
             const plan = getPlanForDay(day);
@@ -277,7 +385,7 @@ export function DailyPlanClient() {
                                     <CardTitle>Gratitude</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <Textarea rows={4} placeholder="What are you grateful for today?" value={plan.gratitude} onChange={e => handleGratitudeChange(day, e.target.value)} />
+                                    <Textarea rows={4} placeholder="What are you grateful for today?" value={plan.gratitude} onChange={e => handleGenericChange(day, "gratitude", e.target.value)} />
                                 </CardContent>
                             </Card>
                             <Card>
@@ -285,7 +393,7 @@ export function DailyPlanClient() {
                                     <CardTitle>End-of-Day Reflection</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <Textarea rows={4} placeholder="How did today go? What did you learn?" value={plan.reflection} onChange={e => handleReflectionChange(day, e.target.value)} />
+                                    <Textarea rows={4} placeholder="How did today go? What did you learn?" value={plan.reflection} onChange={e => handleGenericChange(day, "reflection", e.target.value)} />
                                 </CardContent>
                             </Card>
                          </div>
@@ -295,11 +403,7 @@ export function DailyPlanClient() {
             </CarouselItem>
           )})}
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
       </Carousel>
     </div>
   );
 }
-
-    
