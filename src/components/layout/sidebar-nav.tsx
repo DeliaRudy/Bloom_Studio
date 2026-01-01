@@ -22,7 +22,6 @@ import {
   ListTodo, 
   Map, 
   Sparkles,
-  Flower2,
   UserCircle,
   BookHeart,
   Repeat,
@@ -38,6 +37,7 @@ import {
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { ChevronRight } from "lucide-react"
+import { Rose } from "@/components/icons/rose"
 
 const coreLinks = [
   { href: "/define-success", label: "My Ambition", icon: Target },
@@ -68,7 +68,7 @@ export function SidebarNav() {
     <>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <Flower2 className="w-8 h-8 text-primary" />
+          <Rose className="w-8 h-8 text-primary" />
           <h1 className="font-headline text-2xl font-bold text-primary">BloomVision</h1>
         </div>
       </SidebarHeader>
@@ -88,7 +88,7 @@ export function SidebarNav() {
               </Link>
             </SidebarMenuItem>
             
-            <SidebarGroup asChild>
+            <SidebarGroup>
                 <Collapsible defaultOpen={true}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
@@ -121,7 +121,7 @@ export function SidebarNav() {
                 </Collapsible>
             </SidebarGroup>
 
-            <SidebarGroup asChild>
+            <SidebarGroup>
                  <Collapsible defaultOpen={true}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
