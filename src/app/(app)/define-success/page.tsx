@@ -19,6 +19,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { SuccessDefinition } from "@/lib/types";
+import { setDocumentNonBlocking } from "@/firebase";
 
 const facetsOfLife = [
     "Profession/Career/Business",
@@ -32,60 +36,65 @@ const facetsOfLife = [
     "Leisure",
 ];
 
-type SuccessMetric = {
-    text: string;
-    facets: string[];
-};
-
 export default function DefineSuccessPage() {
-  const [entries, setEntries] = React.useState<SuccessMetric[]>(Array(5).fill(null).map(() => ({ text: "", facets: [] })));
+  const { firestore, user } = useFirebase();
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
-
   const { toast } = useToast();
 
+  const successDefinitionsCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    // Assuming one session for simplicity
+    return collection(firestore, `users/${user.uid}/sessions/default/successDefinitions`);
+  }, [firestore, user]);
+
+  const { data: entries, isLoading } = useCollection<SuccessDefinition>(successDefinitionsCollection);
+
+  const entriesPadded = React.useMemo(() => {
+    const existing = entries || [];
+    const needed = 5 - existing.length;
+    if (needed > 0) {
+      return [...existing, ...Array(needed).fill({ id: '', definitionText: "", facets: [] })];
+    }
+    return existing;
+  }, [entries]);
+
   React.useEffect(() => {
-    if (!api) {
-      return
-    }
-
-    setCurrent(api.selectedScrollSnap())
-
-    const onSelect = () => {
-      setCurrent(api.selectedScrollSnap())
-    }
-
-    api.on("select", onSelect)
-
-    return () => {
-      api.off("select", onSelect)
-    }
-  }, [api])
-
+    if (!api) return;
+    setCurrent(api.selectedScrollSnap());
+    const onSelect = () => setCurrent(api.selectedScrollSnap());
+    api.on("select", onSelect);
+    return () => api.off("select", onSelect);
+  }, [api]);
 
   const handleEntryChange = (index: number, value: string) => {
-    const newEntries = [...entries];
-    newEntries[index] = { ...newEntries[index], text: value };
-    setEntries(newEntries);
+    const entry = entriesPadded[index];
+    if (entry.id && successDefinitionsCollection) {
+        const entryDoc = doc(successDefinitionsCollection, entry.id);
+        updateDoc(entryDoc, { definitionText: value });
+    } else if (!entry.id && value.trim() && successDefinitionsCollection) {
+        addDoc(successDefinitionsCollection, { definitionText: value, facets: [], sessionID: 'default' });
+    }
   };
   
   const handleFacetClick = (facet: string) => {
-    const newEntries = [...entries];
-    const currentFacets = newEntries[current].facets;
+    const entry = entriesPadded[current];
+    if (!entry.id || !successDefinitionsCollection) return;
+    
+    const entryDoc = doc(successDefinitionsCollection, entry.id);
+    const currentFacets = entry.facets || [];
     const facetIndex = currentFacets.indexOf(facet);
 
+    let newFacets: string[];
     if (facetIndex > -1) {
-      // Facet is already selected, so remove it
-      newEntries[current].facets = currentFacets.filter(f => f !== facet);
+      newFacets = currentFacets.filter(f => f !== facet);
     } else {
-      // Facet is not selected, so add it
-      newEntries[current].facets = [...currentFacets, facet];
+      newFacets = [...currentFacets, facet];
     }
-    setEntries(newEntries);
+    updateDoc(entryDoc, { facets: newFacets });
   }
 
   const handleSave = () => {
-    // Here you would typically save the data to a backend
     console.log("Saving entries:", entries);
     toast({
       title: "Success Definitions Saved",
@@ -93,8 +102,8 @@ export default function DefineSuccessPage() {
     });
   };
 
-  const currentMetric = entries[current];
-  const filledMetrics = entries.filter(e => e.text.trim() !== "").length;
+  const currentMetric = entriesPadded[current];
+  const filledMetrics = entries?.filter(e => e.definitionText.trim() !== "").length || 0;
   const progress = (filledMetrics / 5) * 100;
   
   const getProgressEmoji = () => {
@@ -126,7 +135,7 @@ export default function DefineSuccessPage() {
                 {facetsOfLife.map(facet => (
                     <Badge 
                         key={facet} 
-                        variant={currentMetric?.facets.includes(facet) ? "default" : "outline"}
+                        variant={currentMetric?.facets?.includes(facet) ? "default" : "outline"}
                         onClick={() => handleFacetClick(facet)}
                         className="cursor-pointer transition-colors"
                     >
@@ -156,8 +165,8 @@ export default function DefineSuccessPage() {
 
       <Carousel className="w-full max-w-4xl mx-auto" opts={{ loop: true }} setApi={setApi}>
         <CarouselContent>
-          {entries.map((entry, index) => (
-            <CarouselItem key={index}>
+          {entriesPadded.map((entry, index) => (
+            <CarouselItem key={entry.id || index}>
               <div className="p-1">
                 <Card>
                   <CardHeader className="pt-4 pb-2">
@@ -166,7 +175,7 @@ export default function DefineSuccessPage() {
                             Metric #{index + 1}
                         </Label>
                         <div className="flex flex-wrap gap-1 justify-end">
-                            {entry.facets.map(facet => (
+                            {entry.facets?.map(facet => (
                                <Badge key={facet} variant="secondary">{facet}</Badge>
                             ))}
                         </div>
@@ -176,8 +185,8 @@ export default function DefineSuccessPage() {
                     <Textarea
                       id={`success-entry-${index}`}
                       placeholder="e.g., I have financial freedom to travel the world."
-                      value={entry.text}
-                      onChange={(e) => handleEntryChange(index, e.target.value)}
+                      defaultValue={entry.definitionText}
+                      onBlur={(e) => handleEntryChange(index, e.target.value)}
                       className="text-center text-lg h-32 resize-none"
                     />
                   </CardContent>

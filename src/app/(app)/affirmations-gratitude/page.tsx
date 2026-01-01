@@ -12,57 +12,56 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 
 type Entry = {
   id: string;
   text: string;
+  type: 'affirmation' | 'gratitude';
 };
 
 export default function AffirmationsGratitudePage() {
-  const [affirmations, setAffirmations] = React.useState<Entry[]>([
-    { id: "aff1", text: "I am capable of achieving my dreams." },
-  ]);
-  const [gratitude, setGratitude] = React.useState<Entry[]>([
-    { id: "gra1", text: "I am grateful for my supportive family." },
-  ]);
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    const savedAffirmations = localStorage.getItem("affirmations");
-    if (savedAffirmations) {
-      setAffirmations(JSON.parse(savedAffirmations));
-    }
-    const savedGratitude = localStorage.getItem("gratitude");
-    if (savedGratitude) {
-      setGratitude(JSON.parse(savedGratitude));
-    }
-  }, []);
+  const entriesCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/sessions/default/purposeReasons`);
+  }, [firestore, user]);
+
+  const { data: entries, isLoading } = useCollection<Entry>(entriesCollection);
+
+  const affirmations = React.useMemo(() => entries?.filter(e => e.type === 'affirmation') || [], [entries]);
+  const gratitude = React.useMemo(() => entries?.filter(e => e.type === 'gratitude') || [], [entries]);
 
   const handleSave = () => {
-    localStorage.setItem("affirmations", JSON.stringify(affirmations.filter(a => a.text.trim() !== '')));
-    localStorage.setItem("gratitude", JSON.stringify(gratitude.filter(g => g.text.trim() !== '')));
     toast({
       title: "Saved!",
       description: "Your affirmations and gratitude have been saved.",
     });
   };
 
-  const addEntry = (list: Entry[], setList: React.Dispatch<React.SetStateAction<Entry[]>>) => {
-    const newEntry: Entry = { id: `${list.length}-${Date.now()}`, text: "" };
-    setList([...list, newEntry]);
+  const addEntry = (type: 'affirmation' | 'gratitude') => {
+    if (!entriesCollection) return;
+    addDocumentNonBlocking(entriesCollection, { text: "", type, sessionID: 'default' });
   };
 
-  const updateEntry = (id: string, text: string, list: Entry[], setList: React.Dispatch<React.SetStateAction<Entry[]>>) => {
-    setList(list.map(entry => (entry.id === id ? { ...entry, text } : entry)));
+  const updateEntry = (id: string, text: string) => {
+    if (!entriesCollection) return;
+    const entryDoc = doc(entriesCollection, id);
+    updateDocumentNonBlocking(entryDoc, { text });
   };
 
-  const removeEntry = (id: string, list: Entry[], setList: React.Dispatch<React.SetStateAction<Entry[]>>) => {
-    setList(list.filter(entry => entry.id !== id));
+  const removeEntry = (id: string) => {
+    if (!entriesCollection) return;
+    const entryDoc = doc(entriesCollection, id);
+    deleteDocumentNonBlocking(entryDoc);
   };
 
 
@@ -83,19 +82,20 @@ export default function AffirmationsGratitudePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {isLoading && <p>Loading...</p>}
              {affirmations.map((affirmation) => (
               <div key={affirmation.id} className="flex items-center gap-2">
                 <Input
                   value={affirmation.text}
-                  onChange={(e) => updateEntry(affirmation.id, e.target.value, affirmations, setAffirmations)}
+                  onChange={(e) => updateEntry(affirmation.id, e.target.value)}
                   placeholder="e.g., 'I attract positivity...'"
                 />
-                <Button variant="ghost" size="icon" onClick={() => removeEntry(affirmation.id, affirmations, setAffirmations)}>
+                <Button variant="ghost" size="icon" onClick={() => removeEntry(affirmation.id)}>
                   <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                 </Button>
               </div>
             ))}
-            <Button variant="outline" className="w-full" onClick={() => addEntry(affirmations, setAffirmations)}>
+            <Button variant="outline" className="w-full" onClick={() => addEntry('affirmation')}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Affirmation
             </Button>
           </CardContent>
@@ -110,19 +110,20 @@ export default function AffirmationsGratitudePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+             {isLoading && <p>Loading...</p>}
             {gratitude.map((item) => (
                 <div key={item.id} className="flex items-center gap-2">
                     <Input
                     value={item.text}
-                    onChange={(e) => updateEntry(item.id, e.target.value, gratitude, setGratitude)}
+                    onChange={(e) => updateEntry(item.id, e.target.value)}
                     placeholder="e.g., 'The sunny weather...'"
                     />
-                    <Button variant="ghost" size="icon" onClick={() => removeEntry(item.id, gratitude, setGratitude)}>
+                    <Button variant="ghost" size="icon" onClick={() => removeEntry(item.id)}>
                     <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                     </Button>
                 </div>
             ))}
-             <Button variant="outline" className="w-full" onClick={() => addEntry(gratitude, setGratitude)}>
+             <Button variant="outline" className="w-full" onClick={() => addEntry('gratitude')}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Gratitude
             </Button>
           </CardContent>
