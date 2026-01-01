@@ -229,11 +229,9 @@ export function DailyPlanClient() {
                 </div>
             </div>
             <div className="flex items-center gap-4">
-                <CarouselPrevious />
                 <div className="text-center w-64">
                     <p className="text-lg font-semibold text-primary">{format(currentDay, "EEEE, do MMMM yyyy")}</p>
                 </div>
-                <CarouselNext />
                 <Button variant="outline" onClick={handleGoToToday}>Today</Button>
             </div>
         </div>
@@ -283,6 +281,8 @@ export function DailyPlanClient() {
         <div className="flex justify-end mb-4">
              <Button onClick={handleSave}>Save All Plans</Button>
         </div>
+        <CarouselPrevious />
+        <CarouselNext />
         <CarouselContent>
           {daysOfYear.map((day, index) => {
             const plan = getPlanForDay(day);
