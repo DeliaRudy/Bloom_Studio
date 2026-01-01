@@ -89,7 +89,7 @@ export function SidebarNav() {
             </SidebarMenuItem>
             
             <SidebarGroup>
-                <Collapsible defaultOpen={true}>
+                <Collapsible defaultOpen={false}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
                             <Heart className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function SidebarNav() {
             </SidebarGroup>
 
             <SidebarGroup>
-                 <Collapsible defaultOpen={true}>
+                 <Collapsible defaultOpen={false}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
                             <DraftingCompass className="h-4 w-4" />
