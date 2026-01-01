@@ -34,6 +34,9 @@ export default function VisionStatementPage() {
         })
         return;
     }
+    // Save to localStorage
+    localStorage.setItem("bigGoal", goal);
+
     console.log("12-Month Goal:", goal)
     toast({
         title: "Goal Locked!",
