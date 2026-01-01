@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, Trash2 } from "lucide-react";
 
 type Goal = {
   id: string;
@@ -77,6 +78,20 @@ export default function MonthPlannerPage() {
     setSelectedMonthlyBigGoal(value);
   }
 
+  const handleGoalTextChange = (id: string, text: string) => {
+    setGoals(goals.map(goal => goal.id === id ? { ...goal, text } : goal));
+  };
+
+  const handleAddGoal = () => {
+    const newGoal: Goal = { id: Date.now().toString(), text: "", completed: false };
+    setGoals([...goals, newGoal]);
+  };
+
+  const handleRemoveGoal = (id: string) => {
+    setGoals(goals.filter(goal => goal.id !== id));
+  };
+
+
   const goalsAchieved = goals.filter(g => g.completed).length;
   const goalsSet = goals.length;
   const achievementRate = goalsSet > 0 ? Math.round((goalsAchieved / goalsSet) * 100) : 0;
@@ -128,16 +143,25 @@ export default function MonthPlannerPage() {
                 <CardTitle>Goals For This Month</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                     {goals.map(goal => (
-                         <div key={goal.id} className="flex items-center gap-3 p-2 rounded-md border">
+                         <div key={goal.id} className="flex items-center gap-3">
                             <Checkbox id={`goal-${goal.id}`} checked={goal.completed} onCheckedChange={() => handleToggleGoal(goal.id)} />
-                            <label htmlFor={`goal-${goal.id}`} className={`flex-1 text-sm ${goal.completed ? 'line-through text-muted-foreground' : ''}`}>
-                                {goal.text}
-                            </label>
+                            <Input
+                                id={`goal-text-${goal.id}`}
+                                value={goal.text}
+                                onChange={(e) => handleGoalTextChange(goal.id, e.target.value)}
+                                className={`flex-1 text-sm h-auto py-1.5 ${goal.completed ? 'line-through text-muted-foreground' : ''}`}
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveGoal(goal.id)}>
+                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                            </Button>
                         </div>
                     ))}
                 </div>
+                 <Button variant="outline" className="w-full mt-4" onClick={handleAddGoal}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Goal
+                </Button>
             </CardContent>
         </Card>
         <div className="space-y-6">
