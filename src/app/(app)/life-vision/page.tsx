@@ -18,7 +18,7 @@ import * as React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/ui/datepicker";
-import { addYears, differenceInYears } from 'date-fns';
+import { addYears, differenceInYears, parse } from 'date-fns';
 
 const fiveYearPrompts = [
   "Where will I live?",
@@ -40,16 +40,18 @@ export default function LifeVisionPage() {
   const [fiveYearValues, setFiveYearValues] = React.useState<Record<string, string>>(
     fiveYearPrompts.reduce((acc, prompt) => ({ ...acc, [prompt]: "" }), {})
   );
-  const [dateOfBirth, setDateOfBirth] = React.useState<Date | undefined>();
+  const [dateOfBirth, setDateOfBirth] = React.useState<string>("");
   
   const { toast } = useToast();
   
   const fiveYearsFromNow = addYears(new Date(), 5);
-  const ageInFiveYears = dateOfBirth ? differenceInYears(fiveYearsFromNow, dateOfBirth) : null;
+  
+  const dobDate = dateOfBirth ? parse(dateOfBirth, 'dd/MM/yyyy', new Date()) : undefined;
+  const ageInFiveYears = dobDate && !isNaN(dobDate.getTime()) ? differenceInYears(fiveYearsFromNow, dobDate) : null;
 
 
   const handleSave = () => {
-    console.log("Saving life vision:", { decadeValues, fiveYearValues });
+    console.log("Saving life vision:", { decadeValues, fiveYearValues, dateOfBirth });
     toast({
       title: "Life Vision Saved",
       description: "Your long-term plans have been successfully updated.",
@@ -84,11 +86,11 @@ export default function LifeVisionPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                 <div className="space-y-2">
                     <Label htmlFor="dob">Your Date of Birth</Label>
-                    <DatePicker 
-                        date={dateOfBirth} 
-                        setDate={setDateOfBirth} 
-                        className="w-full"
-                        captionLayout="dropdown-buttons"
+                    <Input
+                        id="dob"
+                        placeholder="DD/MM/YYYY"
+                        value={dateOfBirth}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
                     />
                 </div>
                  <div className="space-y-2">
