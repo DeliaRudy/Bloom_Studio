@@ -346,6 +346,46 @@
         "sessionID",
         "reasonText"
       ]
+    },
+     "CycleDay": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CycleDay",
+      "type": "object",
+      "description": "Represents a single day in a user's menstrual cycle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the cycle day (format: YYYY-MM-DD)."
+        },
+        "flow": {
+          "type": "string",
+          "description": "Level of menstrual flow for the day.",
+          "enum": ["none", "light", "medium", "heavy"]
+        }
+      },
+      "required": ["id", "flow"]
+    },
+    "CycleNote": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CycleNote",
+      "type": "object",
+      "description": "A note associated with a specific day in the cycle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the note."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the note."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the note was created.",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "text", "createdAt"]
     }
   },
   "auth": {
@@ -369,6 +409,50 @@
             {
               "name": "userId",
               "description": "Unique identifier for the user account."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/users/{userId}/cycles/{cycleId}",
+        "definition": {
+          "entityName": "CycleDay",
+          "schema": {
+            "$ref": "#/backend/entities/CycleDay"
+          },
+          "description": "Stores data for a single day in a user's menstrual cycle. The cycleId is the date in YYYY-MM-DD format.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "cycleId",
+              "description": "The date of the cycle entry (YYYY-MM-DD)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/cycles/{cycleId}/notes/{noteId}",
+        "definition": {
+          "entityName": "CycleNote",
+          "schema": {
+            "$ref": "#/backend/entities/CycleNote"
+          },
+          "description": "Stores notes for a specific day in the user's cycle.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "cycleId",
+              "description": "The date of the cycle entry (YYYY-MM-DD)."
+            },
+            {
+              "name": "noteId",
+              "description": "Unique identifier for the note."
             }
           ]
         }
@@ -613,3 +697,5 @@
     "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). User data is segregated under `/users/{userId}` for private data. Session data is nested under the user to maintain ownership and provide a clear hierarchical structure. All data related to a session, like success definitions, milestones, prompts, action plans, statements, images, goals, travel pins, and purpose reasons, are nested under `/users/{userId}/sessions/{sessionId}`. This structure facilitates easy management and secure access to user-specific data. Denormalization is not required here, as the hierarchical structure under the user inherently provides ownership and avoids the need for `get()` calls in security rules."
   }
 }
+
+    

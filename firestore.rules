@@ -145,6 +145,24 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && isValidSessionOnUpdate();
       allow delete: if isExistingOwner(userId);
     }
+    
+    /**
+     * @description Controls access to a user's cycle tracking data.
+     * @path /users/{userId}/cycles/{cycleId}
+     * @allow (get, list, create, update, delete) A user can manage their own cycle data.
+     */
+    match /users/{userId}/cycles/{cycleId} {
+        allow read, write: if isOwner(userId);
+    }
+
+     /**
+     * @description Controls access to notes within a specific cycle day.
+     * @path /users/{userId}/cycles/{cycleId}/notes/{noteId}
+     * @allow (get, list, create, update, delete) A user can manage notes for their own cycle days.
+     */
+    match /users/{userId}/cycles/{cycleId}/notes/{noteId} {
+        allow read, write: if isOwner(userId);
+    }
 
     /**
      * @description Controls access to all data nested within a specific session. This single rule
@@ -163,3 +181,4 @@ service cloud.firestore {
     }
   }
 }
+    
