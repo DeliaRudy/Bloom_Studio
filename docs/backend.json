@@ -1,0 +1,608 @@
+{
+  "entities": {
+    "UserAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserAccount",
+      "type": "object",
+      "description": "Stores user account information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user account."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time when the account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "creationDate"
+      ]
+    },
+    "Session": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Session",
+      "type": "object",
+      "description": "Represents a user's session in the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the session."
+        },
+        "userAccountId": {
+          "type": "string",
+          "description": "Reference to UserAccount. (Relationship: UserAccount 1:N Session)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Date and time when the session started.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "Date and time when the session ended.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userAccountId",
+        "startTime"
+      ]
+    },
+    "SuccessDefinition": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SuccessDefinition",
+      "type": "object",
+      "description": "Stores a user's definition of success.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the success definition."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N SuccessDefinition)"
+        },
+        "definitionText": {
+          "type": "string",
+          "description": "The text of the success definition."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "definitionText"
+      ]
+    },
+    "LifeVisionMilestone": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LifeVisionMilestone",
+      "type": "object",
+      "description": "Stores a user's life vision milestone for a specific age.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the life vision milestone."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N LifeVisionMilestone)"
+        },
+        "age": {
+          "type": "number",
+          "description": "The age for this milestone (e.g., 30, 40, etc.)."
+        },
+        "milestoneText": {
+          "type": "string",
+          "description": "The text describing the milestone."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "age",
+        "milestoneText"
+      ]
+    },
+    "FiveYearVisionPrompt": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FiveYearVisionPrompt",
+      "type": "object",
+      "description": "Stores a user's answer to a 5-year vision prompt.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the 5-year vision prompt response."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N FiveYearVisionPrompt)"
+        },
+        "promptKey": {
+          "type": "string",
+          "description": "Key identifying the specific prompt (e.g., 'whereWillILive')."
+        },
+        "responseText": {
+          "type": "string",
+          "description": "The user's response to the prompt."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "promptKey",
+        "responseText"
+      ]
+    },
+    "ActionPlanItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ActionPlanItem",
+      "type": "object",
+      "description": "Stores a single action plan item.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the action plan item."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N ActionPlanItem)"
+        },
+        "itemText": {
+          "type": "string",
+          "description": "The text of the action plan item."
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Indicates whether the item is completed."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "itemText",
+        "isCompleted"
+      ]
+    },
+    "VisionStatement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "VisionStatement",
+      "type": "object",
+      "description": "Stores a user's vision statement and 12-month goal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the vision statement."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N VisionStatement)"
+        },
+        "statementText": {
+          "type": "string",
+          "description": "The text of the vision statement."
+        },
+        "goalText": {
+          "type": "string",
+          "description": "The user's 12-month goal."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "statementText",
+        "goalText"
+      ]
+    },
+    "VisionBoardImage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "VisionBoardImage",
+      "type": "object",
+      "description": "Stores information about an image on the vision board.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the vision board image."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N VisionBoardImage)"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the image."
+        },
+        "caption": {
+          "type": "string",
+          "description": "Optional caption for the image."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "imageUrl"
+      ]
+    },
+    "CategoryGoal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CategoryGoal",
+      "type": "object",
+      "description": "Stores a goal within a specific life category.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the category goal."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N CategoryGoal)"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the goal (e.g., 'Health & Fitness')."
+        },
+        "shortTermGoal": {
+          "type": "string",
+          "description": "The short-term goal text."
+        },
+        "longTermGoal": {
+          "type": "string",
+          "description": "The long-term goal text."
+        },
+        "deadline": {
+          "type": "string",
+          "description": "Optional deadline for the goal.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "category",
+        "shortTermGoal",
+        "longTermGoal"
+      ]
+    },
+    "TravelMapPin": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TravelMapPin",
+      "type": "object",
+      "description": "Stores information about a pin on the travel map.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the travel map pin."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N TravelMapPin)"
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Latitude of the pin."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Longitude of the pin."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Tag for the pin (e.g., 'Vacation', 'Business')."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date associated with the pin.",
+          "format": "date-time"
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL of the photo associated with the pin."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "latitude",
+        "longitude",
+        "tag"
+      ]
+    },
+    "PurposeReason": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PurposeReason",
+      "type": "object",
+      "description": "Stores a single reason for achieving goals.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the purpose reason."
+        },
+        "sessionID": {
+          "type": "string",
+          "description": "Reference to Session. (Relationship: Session 1:N PurposeReason)"
+        },
+        "reasonText": {
+          "type": "string",
+          "description": "The text of the reason."
+        }
+      },
+      "required": [
+        "id",
+        "sessionID",
+        "reasonText"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserAccount",
+          "schema": {
+            "$ref": "#/backend/entities/UserAccount"
+          },
+          "description": "Stores user account information. Path-based ownership enables secure access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}",
+        "definition": {
+          "entityName": "Session",
+          "schema": {
+            "$ref": "#/backend/entities/Session"
+          },
+          "description": "Represents a user's session. Nested under user for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/successDefinitions/{successDefinitionId}",
+        "definition": {
+          "entityName": "SuccessDefinition",
+          "schema": {
+            "$ref": "#/backend/entities/SuccessDefinition"
+          },
+          "description": "Stores a user's definition of success. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "successDefinitionId",
+              "description": "Unique identifier for the success definition."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/lifeVisionMilestones/{lifeVisionMilestoneId}",
+        "definition": {
+          "entityName": "LifeVisionMilestone",
+          "schema": {
+            "$ref": "#/backend/entities/LifeVisionMilestone"
+          },
+          "description": "Stores a user's life vision milestone for a specific age. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "lifeVisionMilestoneId",
+              "description": "Unique identifier for the life vision milestone."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/fiveYearVisionPrompts/{fiveYearVisionPromptId}",
+        "definition": {
+          "entityName": "FiveYearVisionPrompt",
+          "schema": {
+            "$ref": "#/backend/entities/FiveYearVisionPrompt"
+          },
+          "description": "Stores a user's answer to a 5-year vision prompt. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "fiveYearVisionPromptId",
+              "description": "Unique identifier for the 5-year vision prompt response."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/actionPlanItems/{actionPlanItemId}",
+        "definition": {
+          "entityName": "ActionPlanItem",
+          "schema": {
+            "$ref": "#/backend/entities/ActionPlanItem"
+          },
+          "description": "Stores a single action plan item. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "actionPlanItemId",
+              "description": "Unique identifier for the action plan item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/visionStatements/{visionStatementId}",
+        "definition": {
+          "entityName": "VisionStatement",
+          "schema": {
+            "$ref": "#/backend/entities/VisionStatement"
+          },
+          "description": "Stores a user's vision statement and 12-month goal. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "visionStatementId",
+              "description": "Unique identifier for the vision statement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/visionBoardImages/{visionBoardImageId}",
+        "definition": {
+          "entityName": "VisionBoardImage",
+          "schema": {
+            "$ref": "#/backend/entities/VisionBoardImage"
+          },
+          "description": "Stores information about an image on the vision board. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "visionBoardImageId",
+              "description": "Unique identifier for the vision board image."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/categoryGoals/{categoryGoalId}",
+        "definition": {
+          "entityName": "CategoryGoal",
+          "schema": {
+            "$ref": "#/backend/entities/CategoryGoal"
+          },
+          "description": "Stores a goal within a specific life category. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "categoryGoalId",
+              "description": "Unique identifier for the category goal."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/travelMapPins/{travelMapPinId}",
+        "definition": {
+          "entityName": "TravelMapPin",
+          "schema": {
+            "$ref": "#/backend/entities/TravelMapPin"
+          },
+          "description": "Stores information about a pin on the travel map. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "travelMapPinId",
+              "description": "Unique identifier for the travel map pin."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/purposeReasons/{purposeReasonId}",
+        "definition": {
+          "entityName": "PurposeReason",
+          "schema": {
+            "$ref": "#/backend/entities/PurposeReason"
+          },
+          "description": "Stores a single reason for achieving goals. Nested under session.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user account."
+            },
+            {
+              "name": "sessionId",
+              "description": "Unique identifier for the session."
+            },
+            {
+              "name": "purposeReasonId",
+              "description": "Unique identifier for the purpose reason."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). User data is segregated under `/users/{userId}` for private data. Session data is nested under the user to maintain ownership and provide a clear hierarchical structure. All data related to a session, like success definitions, milestones, prompts, action plans, statements, images, goals, travel pins, and purpose reasons, are nested under `/users/{userId}/sessions/{sessionId}`. This structure facilitates easy management and secure access to user-specific data. Denormalization is not required here, as the hierarchical structure under the user inherently provides ownership and avoids the need for `get()` calls in security rules."
+  }
+}
