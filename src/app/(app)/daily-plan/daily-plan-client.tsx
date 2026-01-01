@@ -304,54 +304,41 @@ export function DailyPlanClient() {
           <CardHeader>
             <CardTitle>High-Level Focus</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
             <div className="space-y-4">
-              <div className="flex items-start gap-2">
-                <Label className="w-36 pt-2 font-semibold text-muted-foreground">
+              <div className="flex items-start gap-4">
+                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
                   5 Year Vision:
                 </Label>
-                <Textarea
-                  value={fiveYearVision}
-                  readOnly
-                  disabled
-                  className="font-bold min-h-0"
-                  rows={1}
-                />
+                <p className="font-bold leading-relaxed break-words min-w-0">
+                  {fiveYearVision}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-36 font-semibold text-muted-foreground">
+              <div className="flex items-start gap-4">
+                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
                   Big Goal for YEAR:
                 </Label>
-                <Input
-                  value={bigGoalYear}
-                  readOnly
-                  disabled
-                  className="font-bold"
-                />
+                <p className="font-bold leading-relaxed break-words min-w-0">
+                  {bigGoalYear}
+                </p>
               </div>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Label className="w-36 font-semibold text-muted-foreground">
+              <div className="flex items-start gap-4">
+                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
                   Big Goal for MONTH:
                 </Label>
-                <Input
-                  value={bigGoalMonth}
-                  readOnly
-                  disabled
-                  className="font-bold"
-                />
+                <p className="font-bold leading-relaxed break-words min-w-0">
+                  {bigGoalMonth}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-36 font-semibold text-muted-foreground">
+              <div className="flex items-start gap-4">
+                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
                   Big Goal for WEEK:
                 </Label>
-                <Input
-                  value={bigGoalWeek}
-                  readOnly
-                  disabled
-                  className="font-bold"
-                />
+                <p className="font-bold leading-relaxed break-words min-w-0">
+                  {bigGoalWeek}
+                </p>
               </div>
             </div>
           </CardContent>
