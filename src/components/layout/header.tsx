@@ -14,6 +14,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useUser } from "@/firebase";
+import Link from "next/link";
 
 export function Header() {
   const auth = useAuth();
@@ -39,8 +40,16 @@ export function Header() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{user?.displayName || user?.email || 'My Account'}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
+            <Link href="/settings">
+              <DropdownMenuItem>
+                  Settings
+              </DropdownMenuItem>
+            </Link>
+            <a href="mailto:support@bloomvision.app">
+              <DropdownMenuItem>
+                Support
+              </DropdownMenuItem>
+            </a>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>

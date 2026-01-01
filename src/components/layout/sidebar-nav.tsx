@@ -33,6 +33,7 @@ import {
   CalendarDays,
   ClipboardList,
   BookOpenCheck,
+  Settings,
 } from "lucide-react"
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
@@ -166,6 +167,20 @@ export function SidebarNav() {
                   <span>AI Reflection</span>
                 </SidebarMenuButton>
               </Link>
+            </SidebarMenuItem>
+
+             <SidebarMenuItem>
+                <Link href="/settings">
+                    <SidebarMenuButton
+                    isActive={pathname === "/settings"}
+                    tooltip={{
+                        children: "Settings",
+                    }}
+                    >
+                    <Settings className="h-5 w-5" />
+                    <span>Settings</span>
+                    </SidebarMenuButton>
+                </Link>
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>

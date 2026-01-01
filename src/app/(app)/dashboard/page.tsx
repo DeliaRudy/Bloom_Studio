@@ -1,3 +1,4 @@
+
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
@@ -19,6 +20,7 @@ import {
   CalendarDays,
   ClipboardList,
   BookOpenCheck,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -124,6 +126,12 @@ const features = [
     title: "Daily Plan",
     description: "Plan your day in detail.",
     icon: BookOpenCheck,
+  },
+  {
+    href: "/settings",
+    title: "Settings",
+    description: "Manage your account and preferences.",
+    icon: Settings,
   },
 ];
 
