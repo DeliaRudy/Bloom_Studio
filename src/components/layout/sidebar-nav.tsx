@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -35,9 +36,9 @@ const links = [
   { href: "/goals-list", label: "Goals List", icon: ListTodo },
   { href: "/travel-map", label: "Travel Map", icon: Map },
   { href: "/persona-definition", label: "Persona Definition", icon: UserCircle },
-  { href: "/ai-reflection", label: "AI Reflection", icon: Sparkles },
   { href: "/affirmations-gratitude", label: "Affirmations & Gratitude", icon: BookHeart },
   { href: "/habits", label: "Habits", icon: Repeat },
+  { href: "/ai-reflection", label: "AI Reflection", icon: Sparkles },
 ];
 
 export function SidebarNav() {
