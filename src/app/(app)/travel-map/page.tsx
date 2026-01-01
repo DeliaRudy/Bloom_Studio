@@ -1,24 +1,27 @@
 import { PageHeader } from "@/components/page-header";
-import TravelMapClient from "./travel-map-client";
-import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
 export default function TravelMapPage() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  if (!apiKey) {
-    console.error("Google Maps API Key is missing. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.");
-  }
-
   return (
     <div>
       <PageHeader
         title="My Travel Map"
         description="Pin your past journeys and future adventures. Where in the world do you want to go?"
       />
-      <Suspense fallback={<Skeleton className="w-full h-[600px] rounded-lg" />}>
-        <TravelMapClient apiKey={apiKey} />
-      </Suspense>
+      <Card>
+        <CardContent className="p-0">
+            <div className="aspect-[16/9] relative">
+                <Image
+                    src="https://picsum.photos/seed/worldmap/1200/675"
+                    alt="World map"
+                    data-ai-hint="world map"
+                    fill
+                    className="object-cover rounded-lg"
+                />
+            </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
