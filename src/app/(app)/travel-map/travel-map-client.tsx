@@ -120,16 +120,7 @@ export default function TravelMapClient({ apiKey }: { apiKey: string | undefined
   };
 
   if (!apiKey) {
-    return (
-      <Alert>
-        <Terminal className="h-4 w-4" />
-        <AlertTitle>Google Maps API Key Missing</AlertTitle>
-        <AlertDescription>
-          Please add your Google Maps API key to a <code>.env.local</code> file as{" "}
-          <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to enable the map feature.
-        </AlertDescription>
-      </Alert>
-    );
+    return null;
   }
 
   return (
