@@ -290,7 +290,6 @@ export default function CycleTrackerPage() {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
     new Date()
   );
-  const [lastPeriodDate, setLastPeriodDate] = React.useState<Date | undefined>();
   const [predictedPhases, setPredictedPhases] =
     React.useState<PredictCyclePhasesOutput | null>(null);
   const [note, setNote] = React.useState('');
@@ -358,14 +357,22 @@ export default function CycleTrackerPage() {
   };
   
   const handlePredictPhases = async () => {
-    if (!lastPeriodDate) {
-      toast({
-        title: 'Date Missing',
-        description: 'Please select the start date of your last period.',
-        variant: 'destructive',
-      });
-      return;
+    const periodDays = Object.values(cycleData)
+        .filter(day => day.flow && day.flow !== 'none')
+        .map(day => parseISO(day.id))
+        .sort((a, b) => b.getTime() - a.getTime());
+
+    if (periodDays.length === 0) {
+        toast({
+            title: 'No Period Data',
+            description: 'Please log at least one period day in the tracker before predicting phases.',
+            variant: 'destructive',
+        });
+        return;
     }
+
+    const lastPeriodDate = periodDays[0];
+
     try {
       const result = await predictCyclePhases({
         lastPeriodStartDate: format(lastPeriodDate, 'yyyy-MM-dd'),
@@ -468,22 +475,13 @@ export default function CycleTrackerPage() {
           <CardHeader>
             <CardTitle className="font-headline">AI Phase Prediction</CardTitle>
             <CardDescription>
-              Select the start date of your last period to predict and highlight
-              your upcoming cycle phases on the tracker.
+              Predict and highlight your upcoming cycle phases based on your logged period data.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="w-full sm:w-auto">
-              <Label>Last Period Start Date</Label>
-              <DatePicker
-                date={lastPeriodDate}
-                setDate={setLastPeriodDate}
-                className="w-full"
-              />
-            </div>
-            <Button onClick={handlePredictPhases} className="w-full sm:w-auto sm:self-end">
+            <Button onClick={handlePredictPhases} className="w-full">
               <Sparkles className="mr-2 h-4 w-4" />
-              Predict Phases
+              Predict Phases From My Tracker Data
             </Button>
           </CardContent>
         </Card>
