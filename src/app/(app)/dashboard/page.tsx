@@ -12,6 +12,7 @@ import {
   Sparkles,
   UserCircle,
   BookHeart,
+  Repeat,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -75,6 +76,12 @@ const features = [
     title: "Affirmations & Gratitude",
     description: "Cultivate a positive mindset.",
     icon: BookHeart,
+  },
+  {
+    href: "/habits",
+    title: "Habits",
+    description: "Define habits to start and stop.",
+    icon: Repeat,
   },
 ];
 

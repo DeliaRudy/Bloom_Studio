@@ -21,6 +21,7 @@ import {
   Flower2,
   UserCircle,
   BookHeart,
+  Repeat,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -36,6 +37,7 @@ const links = [
   { href: "/persona-definition", label: "Persona Definition", icon: UserCircle },
   { href: "/ai-reflection", label: "AI Reflection", icon: Sparkles },
   { href: "/affirmations-gratitude", label: "Affirmations & Gratitude", icon: BookHeart },
+  { href: "/habits", label: "Habits", icon: Repeat },
 ];
 
 export function SidebarNav() {
