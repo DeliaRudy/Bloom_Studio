@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "motivational-banner-1",
+      "description": "A beautiful sunrise over mountains, symbolizing new beginnings.",
+      "imageUrl": "https://images.unsplash.com/photo-1595495745827-85bcc5c9a028?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtb3VudGFpbiUyMHN1bnJpc2V8ZW58MHx8fHwxNzY3MjM3NjgzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mountain sunrise"
+    },
+    {
+      "id": "vision-board-1",
+      "description": "A person hiking towards a summit.",
+      "imageUrl": "https://images.unsplash.com/photo-1559641594-3ce6ec3f1d3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwZXJzb24lMjBoaWtpbmd8ZW58MHx8fHwxNzY3MjQ1NzI2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person hiking"
+    },
+    {
+      "id": "vision-board-2",
+      "description": "A cozy, modern living room with a fireplace.",
+      "imageUrl": "https://images.unsplash.com/photo-1674230227190-05b589f2f730?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjb3p5JTIwbGl2aW5ncm9vbXxlbnwwfHx8fDE3NjcyNjQzNzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cozy livingroom"
+    },
+    {
+      "id": "vision-board-3",
+      "description": "A person meditating peacefully outdoors.",
+      "imageUrl": "https://images.unsplash.com/photo-1534665516513-c8cf16762dc1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwbWVkaXRhdGluZ3xlbnwwfHx8fDE3NjcyMTg5NjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person meditating"
+    },
+    {
+      "id": "vision-board-4",
+      "description": "A stack of books on a wooden table.",
+      "imageUrl": "https://images.unsplash.com/photo-1658563248961-62d39328d1a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzdGFjayUyMGJvb2tzfGVufDB8fHx8MTc2NzI2NDM3MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "stack books"
+    },
+    {
+      "id": "vision-board-5",
+      "description": "A diploma and graduation cap.",
+      "imageUrl": "https://images.unsplash.com/photo-1650064175560-369b5b45b649?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxncmFkdWF0aW9uJTIwY2FwfGVufDB8fHx8MTc2NzE3ODM4MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "graduation cap"
+    },
+    {
+      "id": "vision-board-6",
+      "description": "A vibrant cityscape at night.",
+      "imageUrl": "https://images.unsplash.com/photo-1519010470956-6d877008eaa4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjaXR5c2NhcGUlMjBuaWdodHxlbnwwfHx8fDE3NjcxNzU5NDl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cityscape night"
+    }
+  ]
 }
