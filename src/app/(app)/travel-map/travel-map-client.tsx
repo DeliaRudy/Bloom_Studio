@@ -1,8 +1,7 @@
 "use client";
 
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +47,7 @@ function CityCombobox({ onSelect }: { onSelect: (city: City) => void }) {
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-[250px] justify-between"
+            className="w-[250px] justify-between bg-background hover:bg-background/80"
           >
             {value
               ? worldCities.find((city) => `${city.city}, ${city.country}`.toLowerCase() === value)?.city
