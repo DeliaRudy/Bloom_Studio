@@ -145,7 +145,7 @@ export default function LoginPage() {
       <CardHeader className="text-center">
         <div className="flex justify-center items-center gap-2 mb-4">
             <Rose className="w-8 h-8 text-primary" />
-            <CardTitle className="font-headline text-3xl">BloomVision</CardTitle>
+            <CardTitle className="font-headline text-3xl">Bloom</CardTitle>
         </div>
         <CardDescription>Enter your credentials to access your account</CardDescription>
       </CardHeader>

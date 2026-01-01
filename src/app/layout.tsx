@@ -6,7 +6,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'BloomVision',
+  title: 'Bloom',
   description: 'Define, visualize, and track your long-term goals and life vision.',
 };
 

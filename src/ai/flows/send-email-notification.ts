@@ -51,7 +51,7 @@ const prompt = ai.definePrompt({
   name: 'sendEmailNotificationPrompt',
   input: { schema: SendEmailNotificationInputSchema },
   output: { schema: emailContentSchema },
-  prompt: `You are an AI assistant for an app called BloomVision. Your task is to generate the content for an email notification. The user wants to receive a notification of type '{{notificationType}}'.
+  prompt: `You are an AI assistant for an app called Bloom. Your task is to generate the content for an email notification. The user wants to receive a notification of type '{{notificationType}}'.
 
 Based on the notification type, generate an appropriate subject line and a concise, motivating email body.
 
