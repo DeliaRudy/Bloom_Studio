@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -15,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import * as React from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 const fiveYearPrompts = [
   "Where will I live?",
@@ -61,7 +63,10 @@ export default function LifeVisionPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Vision Progress</CardTitle>
+            <div className="flex items-center gap-4">
+                <Badge variant="secondary" className="px-3 py-1 text-sm">STEP 2</Badge>
+                <CardTitle className="font-headline">Vision Progress</CardTitle>
+            </div>
           <div className="flex items-center gap-4 pt-2">
             <Progress value={progress} className="w-full" />
             <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">{Math.round(progress)}% Complete</span>

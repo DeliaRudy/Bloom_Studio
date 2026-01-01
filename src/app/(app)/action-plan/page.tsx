@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, PlusCircle } from "lucide-react";
 import * as React from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 type Task = {
   id: string;
@@ -56,7 +58,10 @@ export default function ActionPlanPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">To-Do List</CardTitle>
+            <div className="flex items-center gap-4">
+                 <Badge variant="secondary" className="px-3 py-1 text-sm">STEP 4</Badge>
+                <CardTitle className="font-headline">To-Do List</CardTitle>
+            </div>
           <CardDescription>Add, edit, and complete your tasks below.</CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/datepicker"
 import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 
 export default function VisionStatementPage() {
   const [dream, setDream] = React.useState("")
@@ -45,7 +47,10 @@ export default function VisionStatementPage() {
       />
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Craft Your Statement</CardTitle>
+            <div className="flex items-center gap-4">
+                <Badge variant="secondary" className="px-3 py-1 text-sm">STEP 3</Badge>
+                <CardTitle className="font-headline">Craft Your Statement</CardTitle>
+            </div>
           <CardDescription>Fill in the blanks to create your personal vision statement.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
