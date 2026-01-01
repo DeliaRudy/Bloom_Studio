@@ -225,7 +225,7 @@ export function DailyPlanClient() {
         </Tabs>
       </div>
 
-      <div className="flex justify-between items-center mb-4 px-1">
+      <div className="flex flex-col mb-4 px-1 gap-4">
         <div className="flex items-center gap-4">
           <BookOpenCheck className="w-8 h-8 text-primary" />
           <div>
@@ -236,7 +236,7 @@ export function DailyPlanClient() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
            <Button variant="outline" size="icon" onClick={() => setCurrentDay(subDays(currentDay, 1))}>
               <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -253,48 +253,48 @@ export function DailyPlanClient() {
       </div>
 
       <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>High-Level Focus</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-            <div className="space-y-4">
-              <div className="flex items-start gap-4">
-                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
-                  5 Year Vision:
-                </Label>
-                <p className="font-bold leading-relaxed break-words min-w-0">
-                  {fiveYearVision}
-                </p>
-              </div>
-              <div className="flex items-start gap-4">
-                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
-                  Big Goal for YEAR:
-                </Label>
-                <p className="font-bold leading-relaxed break-words min-w-0">
-                  {bigGoalYear}
-                </p>
-              </div>
+        <CardHeader>
+          <CardTitle>High-Level Focus</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+          <div className="space-y-4">
+            <div className="flex items-start gap-4">
+              <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
+                5 Year Vision:
+              </Label>
+              <p className="font-bold leading-relaxed break-words min-w-0">
+                {fiveYearVision}
+              </p>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-start gap-4">
-                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
-                  Big Goal for MONTH:
-                </Label>
-                <p className="font-bold leading-relaxed break-words min-w-0">
-                  {bigGoalMonth}
-                </p>
-              </div>
-              <div className="flex items-start gap-4">
-                <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
-                  Big Goal for WEEK:
-                </Label>
-                <p className="font-bold leading-relaxed break-words min-w-0">
-                  {bigGoalWeek}
-                </p>
-              </div>
+            <div className="flex items-start gap-4">
+              <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
+                Big Goal for YEAR:
+              </Label>
+              <p className="font-bold leading-relaxed break-words min-w-0">
+                {bigGoalYear}
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-start gap-4">
+              <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
+                Big Goal for MONTH:
+              </Label>
+              <p className="font-bold leading-relaxed break-words min-w-0">
+                {bigGoalMonth}
+              </p>
+            </div>
+            <div className="flex items-start gap-4">
+              <Label className="w-36 pt-1.5 font-semibold text-muted-foreground shrink-0">
+                Big Goal for WEEK:
+              </Label>
+              <p className="font-bold leading-relaxed break-words min-w-0">
+                {bigGoalWeek}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="mb-6">
         <CardHeader>
@@ -318,215 +318,228 @@ export function DailyPlanClient() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top 3 Priorities</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {planForCurrentDay.priorities.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3">
-                    <Checkbox
-                      id={`${currentDay.toISOString()}-${p.id}`}
-                      checked={p.completed}
-                      onCheckedChange={(checked) =>
-                        handlePriorityChange(
-                          currentDay,
-                          p.id,
-                          'completed',
-                          !!checked
-                        )
-                      }
-                    />
-                    <Input
-                      value={p.text}
-                      onChange={(e) =>
-                        handlePriorityChange(
-                          currentDay,
-                          p.id,
-                          'text',
-                          e.target.value
-                        )
-                      }
-                      className={cn('h-9',
-                        p.completed
-                          ? 'line-through text-muted-foreground'
-                          : ''
-                      )}
-                    />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Daily Discipline Checklist</CardTitle>
-                <CardDescription className="flex items-center gap-2 pt-2 text-primary">
-                  <Heart className="w-8 h-8 text-primary" />
-                  <span className="text-lg font-bold">
-                    {completedHabits} / {totalHabits}
-                  </span>
-                  <span className="text-lg">
-                    &mdash; {disciplinePercentage}% discipline
-                  </span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {dailyHabits.length > 0 ? (
-                  <div className="space-y-2">
-                    {dailyHabits.map((habit) => (
-                      <div
-                        key={habit}
-                        className="flex items-center gap-3 cursor-pointer rounded-md p-2 hover:bg-muted/50"
-                        onClick={() => handleHabitToggle(currentDay, habit)}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top 3 Priorities</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {planForCurrentDay.priorities.map((p) => (
+                <div key={p.id} className="flex items-center gap-3">
+                  <Checkbox
+                    id={`${currentDay.toISOString()}-${p.id}`}
+                    checked={p.completed}
+                    onCheckedChange={(checked) =>
+                      handlePriorityChange(
+                        currentDay,
+                        p.id,
+                        'completed',
+                        !!checked
+                      )
+                    }
+                  />
+                  <Input
+                    value={p.text}
+                    onChange={(e) =>
+                      handlePriorityChange(
+                        currentDay,
+                        p.id,
+                        'text',
+                        e.target.value
+                      )
+                    }
+                    className={cn(
+                      'h-9',
+                      p.completed ? 'line-through text-muted-foreground' : ''
+                    )}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Discipline Checklist</CardTitle>
+              <CardDescription className="flex items-center gap-2 pt-2 text-primary">
+                <Heart className="w-8 h-8 text-primary" />
+                <span className="text-lg font-bold">
+                  {completedHabits} / {totalHabits}
+                </span>
+                <span className="text-lg">
+                  &mdash; {disciplinePercentage}% discipline
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {dailyHabits.length > 0 ? (
+                <div className="space-y-2">
+                  {dailyHabits.map((habit) => (
+                    <div
+                      key={habit}
+                      className="flex items-center gap-3 cursor-pointer rounded-md p-2 hover:bg-muted/50"
+                      onClick={() => handleHabitToggle(currentDay, habit)}
+                    >
+                      <Checkbox checked={planForCurrentDay.habits[habit]} />
+                      <span
+                        className={cn(
+                          'text-sm',
+                          planForCurrentDay.habits[habit] &&
+                            'line-through text-muted-foreground'
+                        )}
                       >
-                        <Checkbox checked={planForCurrentDay.habits[habit]} />
-                        <span
-                          className={cn(
-                            'text-sm',
-                            planForCurrentDay.habits[habit] &&
-                              'line-through text-muted-foreground'
-                          )}
+                        {habit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No daily habits defined yet. Go to the{' '}
+                  <Link href="/daily-habits" className="underline font-semibold">
+                    Daily Habits
+                  </Link>{' '}
+                  page to add some.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-primary font-headline">
+                Schedule for the Day
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative w-full overflow-auto">
+                <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 px-4 py-2">
+                  <Label className="font-semibold">Time</Label>
+                  <Label className="font-semibold">Task</Label>
+                  <Label className="font-semibold">Notes</Label>
+                  <Label className="font-semibold text-right pr-2">
+                    Priority
+                  </Label>
+                </div>
+                <Separator />
+                <div className="max-h-[480px] overflow-y-auto pr-2">
+                  {hours.map((hour, hourIndex) => {
+                    const time = new Date(`1970-01-01T${hour}`);
+                    return (
+                      <div
+                        key={hour}
+                        className={cn(
+                          'grid grid-cols-[auto_1fr_1fr_auto] items-center gap-x-4 px-2 rounded-md',
+                          hourIndex % 2 === 0 ? 'bg-muted/30' : ''
+                        )}
+                      >
+                        <Label className="font-semibold text-primary w-20 py-3 text-center">
+                          {format(time, 'h:mm a')}
+                        </Label>
+                        <Input
+                          value={
+                            planForCurrentDay.schedule[hour]?.task || ''
+                          }
+                          onChange={(e) =>
+                            handleScheduleChange(
+                              currentDay,
+                              hour,
+                              'task',
+                              e.target.value
+                            )
+                          }
+                          placeholder="Task/Activity"
+                          className="bg-transparent border-0 border-b rounded-none"
+                        />
+                        <Input
+                          value={
+                            planForCurrentDay.schedule[hour]?.notes || ''
+                          }
+                          onChange={(e) =>
+                            handleScheduleChange(
+                              currentDay,
+                              hour,
+                              'notes',
+                              e.target.value
+                            )
+                          }
+                          placeholder="Notes..."
+                          className="bg-transparent border-0 border-b rounded-none"
+                        />
+                        <Select
+                          value={
+                            planForCurrentDay.schedule[hour]?.priority ||
+                            'Medium'
+                          }
+                          onValueChange={(
+                            value: 'High' | 'Medium' | 'Low'
+                          ) =>
+                            handleScheduleChange(
+                              currentDay,
+                              hour,
+                              'priority',
+                              value
+                            )
+                          }
                         >
-                          {habit}
-                        </span>
+                          <SelectTrigger className="w-28 border-0 bg-transparent focus:ring-0 focus:ring-offset-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Low">Low</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No daily habits defined yet. Go to the{' '}
-                     <Link href="/daily-habits" className="underline font-semibold">Daily Habits</Link> page to add some.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-6">
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-primary font-headline">
-                  Schedule for the Day
-                </CardTitle>
+                <CardTitle>Gratitude</CardTitle>
               </CardHeader>
               <CardContent>
-                 <div className="relative w-full overflow-auto">
-                    <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-4 px-4 py-2">
-                      <Label className="font-semibold">Time</Label>
-                      <Label className="font-semibold">Task</Label>
-                      <Label className="font-semibold">Notes</Label>
-                      <Label className="font-semibold text-right pr-2">Priority</Label>
-                    </div>
-                    <Separator />
-                    <div className="max-h-[480px] overflow-y-auto pr-2">
-                      {hours.map((hour, hourIndex) => {
-                        const time = new Date(`1970-01-01T${hour}`);
-                        return (
-                          <div key={hour} className={cn("grid grid-cols-[auto_1fr_1fr_auto] items-center gap-x-4 px-2 rounded-md", hourIndex % 2 === 0 ? 'bg-muted/30' : '')}>
-                            <Label className="font-semibold text-primary w-20 py-3 text-center">
-                              {format(time, 'h:mm a')}
-                            </Label>
-                            <Input
-                              value={planForCurrentDay.schedule[hour]?.task || ''}
-                              onChange={(e) =>
-                                handleScheduleChange(
-                                  currentDay,
-                                  hour,
-                                  'task',
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Task/Activity"
-                              className="bg-transparent border-0 border-b rounded-none"
-                            />
-                            <Input
-                              value={planForCurrentDay.schedule[hour]?.notes || ''}
-                              onChange={(e) =>
-                                handleScheduleChange(
-                                  currentDay,
-                                  hour,
-                                  'notes',
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Notes..."
-                              className="bg-transparent border-0 border-b rounded-none"
-                            />
-                            <Select
-                              value={
-                                planForCurrentDay.schedule[hour]?.priority || 'Medium'
-                              }
-                              onValueChange={(
-                                value: 'High' | 'Medium' | 'Low'
-                              ) =>
-                                handleScheduleChange(
-                                  currentDay,
-                                  hour,
-                                  'priority',
-                                  value
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-28 border-0 bg-transparent focus:ring-0 focus:ring-offset-0">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="High">High</SelectItem>
-                                <SelectItem value="Medium">
-                                  Medium
-                                </SelectItem>
-                                <SelectItem value="Low">Low</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        );
-                      })}
-                    </div>
-                 </div>
+                <Textarea
+                  rows={4}
+                  placeholder="What are you grateful for today?"
+                  value={planForCurrentDay.gratitude}
+                  onChange={(e) =>
+                    handleGenericChange(
+                      currentDay,
+                      'gratitude',
+                      e.target.value
+                    )
+                  }
+                />
               </CardContent>
             </Card>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gratitude</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    rows={4}
-                    placeholder="What are you grateful for today?"
-                    value={planForCurrentDay.gratitude}
-                    onChange={(e) =>
-                      handleGenericChange(
-                        currentDay,
-                        'gratitude',
-                        e.target.value
-                      )
-                    }
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>End-of-Day Reflection</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    rows={4}
-                    placeholder="How did today go? What did you learn?"
-                    value={planForCurrentDay.reflection}
-                    onChange={(e) =>
-                      handleGenericChange(
-                        currentDay,
-                        'reflection',
-                        e.target.value
-                      )
-                    }
-                  />
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>End-of-Day Reflection</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  rows={4}
+                  placeholder="How did today go? What did you learn?"
+                  value={planForCurrentDay.reflection}
+                  onChange={(e) =>
+                    handleGenericChange(
+                      currentDay,
+                      'reflection',
+                      e.target.value
+                    )
+                  }
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
+      </div>
     </div>
   );
 }
