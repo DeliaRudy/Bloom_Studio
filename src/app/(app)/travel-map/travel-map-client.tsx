@@ -2,22 +2,25 @@
 
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+  } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
+import { City, worldCities } from "@/lib/world-cities";
+import { cn } from "@/lib/utils";
 
 type Pin = {
   id: number;
@@ -25,45 +28,95 @@ type Pin = {
   lng: number;
   tag: string;
   color: string;
+  city: string;
 };
 
 const pinColors: Record<string, string> = {
-  Vacation: "hsla(120, 100%, 35%, 1)", // Green
-  Business: "hsla(210, 100%, 45%, 1)", // Blue
-  "In Transit": "hsla(0, 0%, 50%, 1)", // Grey
-  Baecation: "hsla(330, 100%, 70%, 1)", // Pink
+  Visited: "hsla(120, 100%, 35%, 1)", // Green
+  "Want to Go": "hsla(210, 100%, 45%, 1)", // Blue
+  "Dream Destination": "hsla(330, 100%, 70%, 1)", // Pink
 };
+
+function CityCombobox({ onSelect }: { onSelect: (city: City) => void }) {
+    const [open, setOpen] = React.useState(false)
+    const [value, setValue] = React.useState("")
+   
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-[250px] justify-between"
+          >
+            {value
+              ? worldCities.find((city) => `${city.city}, ${city.country}`.toLowerCase() === value)?.city
+              : "Select destination..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[250px] p-0">
+          <Command>
+            <CommandInput placeholder="Search city..." />
+            <CommandList>
+                <CommandEmpty>No city found.</CommandEmpty>
+                <CommandGroup>
+                {worldCities.map((city) => (
+                    <CommandItem
+                    key={city.city}
+                    value={`${city.city}, ${city.country}`}
+                    onSelect={(currentValue) => {
+                        setValue(currentValue === value ? "" : currentValue)
+                        setOpen(false)
+                        const selectedCity = worldCities.find(c => `${c.city}, ${c.country}`.toLowerCase() === currentValue);
+                        if (selectedCity) {
+                            onSelect(selectedCity);
+                        }
+                    }}
+                    >
+                    <Check
+                        className={cn(
+                        "mr-2 h-4 w-4",
+                        value === `${city.city}, ${city.country}`.toLowerCase() ? "opacity-100" : "opacity-0"
+                        )}
+                    />
+                    {city.city}, {city.country}
+                    </CommandItem>
+                ))}
+                </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    )
+  }
 
 export default function TravelMapClient({ apiKey }: { apiKey: string | undefined }) {
   const [pins, setPins] = React.useState<Pin[]>([
-    { id: 1, lat: 48.8566, lng: 2.3522, tag: "Vacation", color: pinColors["Vacation"] },
-    { id: 2, lat: 34.0522, lng: -118.2437, tag: "Business", color: pinColors["Business"] },
+    { id: 1, lat: 48.8566, lng: 2.3522, tag: "Visited", color: pinColors["Visited"], city: "Paris" },
+    { id: 2, lat: 34.0522, lng: -118.2437, tag: "Want to Go", color: pinColors["Want to Go"], city: "Los Angeles" },
   ]);
-  const [open, setOpen] = React.useState(false);
+
   const { toast } = useToast();
 
-  const handleAddPin = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const destination = formData.get("destination") as string;
-    const tag = formData.get("tag") as string;
-    
-    // In a real app, you would use a geocoding service to convert destination to lat/lng
-    // For this demo, we'll add a random pin.
+  const handleAddPin = (city: City) => {
+    // For now, let's just use the "Want to Go" tag. We can make this selectable later.
+    const tag = "Want to Go";
     const newPin: Pin = {
       id: Date.now(),
-      lat: Math.random() * 180 - 90,
-      lng: Math.random() * 360 - 180,
+      lat: city.lat,
+      lng: city.lng,
       tag: tag,
       color: pinColors[tag],
+      city: city.city,
     };
     
     setPins([...pins, newPin]);
     toast({
       title: "Destination Added!",
-      description: `${destination} has been pinned to your map.`,
+      description: `${city.city} has been pinned to your map.`,
     });
-    setOpen(false);
   };
 
   if (!apiKey) {
@@ -101,48 +154,14 @@ export default function TravelMapClient({ apiKey }: { apiKey: string | undefined
                     boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
                     transform: 'translate(-50%, -50%)'
                   }}
-                  title={pin.tag}
+                  title={`${pin.city} - ${pin.tag}`}
                />
             </AdvancedMarker>
           ))}
         </Map>
       </APIProvider>
       <div className="absolute top-4 right-4">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>Add New Destination</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Pin a New Destination</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddPin} className="space-y-4">
-              <div>
-                <Label htmlFor="destination">Destination</Label>
-                <Input id="destination" name="destination" placeholder="e.g., Tokyo, Japan" required />
-              </div>
-              <div>
-                <Label htmlFor="tag">Tag</Label>
-                 <Select name="tag" required defaultValue="Vacation">
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a tag" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Object.keys(pinColors).map(tag => (
-                            <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="ghost">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Add Pin</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CityCombobox onSelect={handleAddPin} />
       </div>
     </div>
   );
