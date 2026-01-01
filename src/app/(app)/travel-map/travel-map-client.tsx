@@ -157,7 +157,7 @@ export function TravelMapClient() {
         <div className="lg:col-span-2">
             <Card>
                 <CardContent className="p-0">
-                    <div className="aspect-[16/9] relative">
+                    <div className="aspect-[16/9] w-full h-full relative flex items-center justify-center">
                         <Image
                             src="/transparent-world-map.png"
                             alt="World map"
