@@ -21,6 +21,18 @@ export default function PersonaDefinitionPage() {
     const [philosophies, setPhilosophies] = React.useState("");
     const { toast } = useToast();
 
+    React.useEffect(() => {
+        const savedReasons = localStorage.getItem("personaWhy");
+        if (savedReasons) {
+            const parsed = JSON.parse(savedReasons);
+            const fullList = Array(5).fill("");
+            parsed.forEach((r: string, i: number) => {
+                if(i < 5) fullList[i] = r;
+            });
+            setReasons(fullList);
+        }
+    }, []);
+
     const handleReasonChange = (index: number, value: string) => {
         const newReasons = [...reasons];
         newReasons[index] = value;
@@ -34,8 +46,11 @@ export default function PersonaDefinitionPage() {
     };
 
     const handleSave = () => {
-        console.log("Saving Persona Definition (Why):", reasons);
-        console.log("Saving Persona Definition (Who):", traits);
+        const filteredReasons = reasons.filter(r => r);
+        localStorage.setItem("personaWhy", JSON.stringify(filteredReasons));
+        
+        console.log("Saving Persona Definition (Why):", filteredReasons);
+        console.log("Saving Persona Definition (Who):", traits.filter(t => t.word));
         console.log("Saving Personal Philosophies:", philosophies);
         toast({
             title: "Your Persona has been saved!",
@@ -141,3 +156,5 @@ export default function PersonaDefinitionPage() {
         </div>
     );
 }
+
+    

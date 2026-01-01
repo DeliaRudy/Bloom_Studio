@@ -16,6 +16,27 @@ export default function HabitsPage() {
   const [stopHabits, setStopHabits] = React.useState<string[]>(Array(HABIT_COUNT).fill(""));
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    const savedStartHabits = localStorage.getItem("startHabits");
+    if (savedStartHabits) {
+      const parsed = JSON.parse(savedStartHabits);
+      const fullList = Array(HABIT_COUNT).fill("");
+      parsed.forEach((h: string, i: number) => {
+        if(i < HABIT_COUNT) fullList[i] = h;
+      });
+      setStartHabits(fullList);
+    }
+    const savedStopHabits = localStorage.getItem("stopHabits");
+    if (savedStopHabits) {
+      const parsed = JSON.parse(savedStopHabits);
+      const fullList = Array(HABIT_COUNT).fill("");
+      parsed.forEach((h: string, i: number) => {
+        if(i < HABIT_COUNT) fullList[i] = h;
+      });
+      setStopHabits(fullList);
+    }
+  }, []);
+
   const handleHabitChange = (
     index: number,
     value: string,
@@ -28,8 +49,14 @@ export default function HabitsPage() {
   };
 
   const handleSave = () => {
-    console.log("Habits to Start:", startHabits.filter(h => h));
-    console.log("Habits to Stop:", stopHabits.filter(h => h));
+    const filteredStartHabits = startHabits.filter(h => h);
+    const filteredStopHabits = stopHabits.filter(h => h);
+    
+    localStorage.setItem("startHabits", JSON.stringify(filteredStartHabits));
+    localStorage.setItem("stopHabits", JSON.stringify(filteredStopHabits));
+
+    console.log("Habits to Start:", filteredStartHabits);
+    console.log("Habits to Stop:", filteredStopHabits);
     toast({
       title: "Habits Saved",
       description: "Your new habits have been successfully saved.",
@@ -99,3 +126,5 @@ export default function HabitsPage() {
     </div>
   );
 }
+
+    

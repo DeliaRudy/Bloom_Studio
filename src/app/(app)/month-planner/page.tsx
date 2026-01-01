@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 type Goal = {
   id: string;
@@ -27,36 +28,47 @@ const initialGoals: Goal[] = [
   { id: "4", text: "Set a bible reading schedule and plan", completed: false },
 ];
 
-const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
 export default function MonthPlannerPage() {
   const [currentMonth] = React.useState(new Date());
   const [bigGoal, setBigGoal] = React.useState("");
   const [fiveYearVision, setFiveYearVision] = React.useState("");
   const [monthlyGoals, setMonthlyGoals] = React.useState<string[]>([]);
   const [selectedMonthlyBigGoal, setSelectedMonthlyBigGoal] = React.useState<string | undefined>(undefined);
-  const [monthlyBigGoal, setMonthlyBigGoal] = React.useState("To plan out the year and related APIs");
   const [goals, setGoals] = React.useState<Goal[]>(initialGoals);
   const [fiveWords, setFiveWords] = React.useState(["Driven", "Attentive", "Determined", "Amazing", "Inspired"]);
+  
+  const [startHabits, setStartHabits] = React.useState<string[]>([]);
+  const [stopHabits, setStopHabits] = React.useState<string[]>([]);
+  const [lifeRules, setLifeRules] = React.useState<string[]>([]);
+  
+  const [selectedStartHabit, setSelectedStartHabit] = React.useState<string | undefined>(undefined);
+  const [selectedStopHabit, setSelectedStopHabit] = React.useState<string | undefined>(undefined);
+  const [selectedLifeRules, setSelectedLifeRules] = React.useState<string[]>([]);
+  
   const { toast } = useToast();
   
   React.useEffect(() => {
     const savedBigGoal = localStorage.getItem("bigGoal");
-    if (savedBigGoal) {
-      setBigGoal(savedBigGoal);
-    }
+    if (savedBigGoal) setBigGoal(savedBigGoal);
+
     const saved5YearVision = localStorage.getItem("5YearVision");
-    if (saved5YearVision) {
-      setFiveYearVision(saved5YearVision);
-    }
+    if (saved5YearVision) setFiveYearVision(saved5YearVision);
+
     const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
-    if (savedMonthlyGoals) {
-      setMonthlyGoals(JSON.parse(savedMonthlyGoals));
-    }
+    if (savedMonthlyGoals) setMonthlyGoals(JSON.parse(savedMonthlyGoals));
+    
     const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
-    if (savedMonthlyBigGoal) {
-        setSelectedMonthlyBigGoal(savedMonthlyBigGoal);
-    }
+    if (savedMonthlyBigGoal) setSelectedMonthlyBigGoal(savedMonthlyBigGoal);
+    
+    const savedStartHabits = localStorage.getItem("startHabits");
+    if (savedStartHabits) setStartHabits(JSON.parse(savedStartHabits).filter((h: string) => h));
+    
+    const savedStopHabits = localStorage.getItem("stopHabits");
+    if (savedStopHabits) setStopHabits(JSON.parse(savedStopHabits).filter((h: string) => h));
+
+    const savedLifeRules = localStorage.getItem("personaWhy");
+    if (savedLifeRules) setLifeRules(JSON.parse(savedLifeRules).filter((r: string) => r));
+
   }, []);
 
   const handleToggleGoal = (id: string) => {
@@ -89,6 +101,18 @@ export default function MonthPlannerPage() {
 
   const handleRemoveGoal = (id: string) => {
     setGoals(goals.filter(goal => goal.id !== id));
+  };
+
+  const handleLifeRuleSelect = (rule: string) => {
+    setSelectedLifeRules(prev => {
+        if (prev.includes(rule)) {
+            return prev.filter(r => r !== rule);
+        }
+        if (prev.length < 2) {
+            return [...prev, rule];
+        }
+        return prev;
+    });
   };
 
 
@@ -129,7 +153,7 @@ export default function MonthPlannerPage() {
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="no-goals" disabled>No monthly goals set</SelectItem>
+                  <SelectItem value="no-goals" disabled>No monthly goals set in Month Map</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -230,6 +254,74 @@ export default function MonthPlannerPage() {
         </CardContent>
       </Card>
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Schedule</CardTitle>
+          <CardDescription>
+            Select habits and rules to focus on this month.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+                <Label htmlFor="start-habit">Something to Start</Label>
+                <Select onValueChange={setSelectedStartHabit} value={selectedStartHabit}>
+                    <SelectTrigger id="start-habit">
+                        <SelectValue placeholder="Select a habit to start" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {startHabits.length > 0 ? (
+                            startHabits.map((habit, index) => <SelectItem key={index} value={habit}>{habit}</SelectItem>)
+                        ) : (
+                            <SelectItem value="no-habits" disabled>No 'start' habits defined</SelectItem>
+                        )}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="stop-habit">Something to Stop</Label>
+                <Select onValueChange={setSelectedStopHabit} value={selectedStopHabit}>
+                    <SelectTrigger id="stop-habit">
+                        <SelectValue placeholder="Select a habit to stop" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {stopHabits.length > 0 ? (
+                           stopHabits.map((habit, index) => <SelectItem key={index} value={habit}>{habit}</SelectItem>)
+                        ) : (
+                            <SelectItem value="no-habits" disabled>No 'stop' habits defined</SelectItem>
+                        )}
+                    </SelectContent>
+                </Select>
+            </div>
+             <div className="space-y-2">
+                <Label>Life Rules (Select up to 2)</Label>
+                <Select onValueChange={handleLifeRuleSelect} value={selectedLifeRules.join(', ')}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select life rules" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {lifeRules.length > 0 ? (
+                            lifeRules.map((rule, index) => (
+                                <SelectItem key={index} value={rule} onSelect={(e) => { e.preventDefault(); handleLifeRuleSelect(rule)}}>
+                                    <div className="flex items-center">
+                                         <Checkbox checked={selectedLifeRules.includes(rule)} className="mr-2"/>
+                                        <span>{rule}</span>
+                                    </div>
+                                </SelectItem>
+                            ))
+                        ) : (
+                             <SelectItem value="no-rules" disabled>No life rules defined</SelectItem>
+                        )}
+                    </SelectContent>
+                </Select>
+                <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedLifeRules.map(rule => <Badge key={rule} variant="secondary">{rule}</Badge>)}
+                </div>
+            </div>
+        </CardContent>
+      </Card>
+
+
       <div className="flex justify-end mt-8">
         <Button size="lg" onClick={handleSave}>
           Save Month Plan
@@ -238,3 +330,5 @@ export default function MonthPlannerPage() {
     </div>
   );
 }
+
+    
