@@ -19,6 +19,10 @@ export default function MonthlyGoalsPage() {
     if (savedBigGoal) {
       setBigGoal(savedBigGoal);
     }
+    const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
+    if (savedMonthlyGoals) {
+      setMonthlyGoals(JSON.parse(savedMonthlyGoals));
+    }
   }, []);
 
   const handleGoalChange = (index: number, value: string) => {
@@ -28,6 +32,7 @@ export default function MonthlyGoalsPage() {
   };
 
   const handleSave = () => {
+    localStorage.setItem("monthlyGoals", JSON.stringify(monthlyGoals));
     console.log("Saving Monthly Goals:", monthlyGoals);
     toast({
       title: "Monthly Goals Saved",

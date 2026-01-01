@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Goal = {
   id: string;
@@ -31,6 +31,9 @@ const months = ["January", "February", "March", "April", "May", "June", "July", 
 export default function MonthPlannerPage() {
   const [currentMonth] = React.useState(new Date());
   const [bigGoal, setBigGoal] = React.useState("");
+  const [fiveYearVision, setFiveYearVision] = React.useState("");
+  const [monthlyGoals, setMonthlyGoals] = React.useState<string[]>([]);
+  const [selectedMonthlyBigGoal, setSelectedMonthlyBigGoal] = React.useState<string | undefined>(undefined);
   const [monthlyBigGoal, setMonthlyBigGoal] = React.useState("To plan out the year and related APIs");
   const [goals, setGoals] = React.useState<Goal[]>(initialGoals);
   const [fiveWords, setFiveWords] = React.useState(["Driven", "Attentive", "Determined", "Amazing", "Inspired"]);
@@ -41,6 +44,18 @@ export default function MonthPlannerPage() {
     if (savedBigGoal) {
       setBigGoal(savedBigGoal);
     }
+    const saved5YearVision = localStorage.getItem("5YearVision");
+    if (saved5YearVision) {
+      setFiveYearVision(saved5YearVision);
+    }
+    const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
+    if (savedMonthlyGoals) {
+      setMonthlyGoals(JSON.parse(savedMonthlyGoals));
+    }
+    const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
+    if (savedMonthlyBigGoal) {
+        setSelectedMonthlyBigGoal(savedMonthlyBigGoal);
+    }
   }, []);
 
   const handleToggleGoal = (id: string) => {
@@ -48,6 +63,9 @@ export default function MonthPlannerPage() {
   };
   
   const handleSave = () => {
+    if (selectedMonthlyBigGoal) {
+      localStorage.setItem("monthlyBigGoal", selectedMonthlyBigGoal);
+    }
     console.log("Saving Monthly Planner Data...");
     toast({
         title: "Planner Saved!",
@@ -55,9 +73,15 @@ export default function MonthPlannerPage() {
     })
   }
 
+  const handleMonthlyBigGoalChange = (value: string) => {
+    setSelectedMonthlyBigGoal(value);
+  }
+
   const goalsAchieved = goals.filter(g => g.completed).length;
   const goalsSet = goals.length;
   const achievementRate = goalsSet > 0 ? Math.round((goalsAchieved / goalsSet) * 100) : 0;
+  
+  const availableMonthlyGoals = monthlyGoals.filter(g => g && g.trim() !== "");
 
   return (
     <div>
@@ -70,7 +94,7 @@ export default function MonthPlannerPage() {
         <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="space-y-1">
             <p className="font-semibold text-muted-foreground">5 Year Vision:</p>
-            <p className="font-bold">Award Winning Professional</p>
+            <p className="font-bold">{fiveYearVision || "Not set yet"}</p>
           </div>
            <div className="space-y-1">
             <p className="font-semibold text-muted-foreground">Big Goal for the YEAR:</p>
@@ -78,7 +102,22 @@ export default function MonthPlannerPage() {
           </div>
            <div className="space-y-1">
             <p className="font-semibold text-muted-foreground">Big Goal for the MONTH:</p>
-            <Input className="font-bold" value={monthlyBigGoal} onChange={(e) => setMonthlyBigGoal(e.target.value)} />
+            <Select onValueChange={handleMonthlyBigGoalChange} value={selectedMonthlyBigGoal}>
+              <SelectTrigger className="font-bold">
+                <SelectValue placeholder="Select a goal for the month" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMonthlyGoals.length > 0 ? (
+                  availableMonthlyGoals.map((goal, index) => (
+                    <SelectItem key={index} value={goal}>
+                      {goal}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-goals" disabled>No monthly goals set</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

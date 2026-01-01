@@ -24,7 +24,7 @@ const fiveYearPrompts = [
   "Where will I live?",
   "Who will I be with?",
   "What will I have achieved in work or business?",
-  "What assets will I own?",
+  "What will I own?",
   "What will I look like?",
   "How will I feel?",
   "What will I do in my free time?",
@@ -55,6 +55,9 @@ export default function LifeVisionPage() {
 
 
   const handleSave = () => {
+    const visionStatement = `I will ${visionStatementDream || "[dream]"} and I will have made/invested $${visionStatementAmount || "[amount]"} by ${fiveYearsFromNow.toLocaleDateString()}.`;
+    localStorage.setItem("5YearVision", visionStatement);
+
     console.log("Saving life vision:", { decadeValues, fiveYearValues, dateOfBirth });
     toast({
       title: "Life Vision Saved",
