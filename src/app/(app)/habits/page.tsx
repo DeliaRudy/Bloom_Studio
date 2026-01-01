@@ -48,7 +48,7 @@ export default function HabitsPage() {
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
               <ListPlus className="h-6 w-6 text-green-500" />
-              Habits to Start/Work On
+              Habits to Start
             </CardTitle>
             <CardDescription>List up to 12 habits you want to cultivate this year.</CardDescription>
           </CardHeader>
