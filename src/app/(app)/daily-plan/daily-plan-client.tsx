@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { eachDayOfInterval, startOfYear, endOfYear, format, isToday, differenceInDays, getMonth } from "date-fns";
+import { eachDayOfInterval, startOfYear, endOfYear, format, isToday, differenceInDays, getMonth, startOfWeek, addDays } from "date-fns";
 import { BookOpenCheck, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,7 +50,6 @@ type DailyPlan = {
   gratitude: string;
   habits: Record<string, boolean>;
   todaysBigGoal: string;
-  weeklyBigGoal: string;
 };
 
 const hours = Array.from({ length: 15 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`); // 6am to 8pm
@@ -71,6 +70,7 @@ export function DailyPlanClient() {
   const [fiveYearVision, setFiveYearVision] = React.useState("");
   const [bigGoalYear, setBigGoalYear] = React.useState("");
   const [bigGoalMonth, setBigGoalMonth] = React.useState("");
+  const [bigGoalWeek, setBigGoalWeek] = React.useState("");
   
   React.useEffect(() => {
     // Load data from local storage
@@ -85,10 +85,10 @@ export function DailyPlanClient() {
     }
 
     const saved5YearVision = localStorage.getItem("5YearVision");
-    setFiveYearVision(saved5YearVision || "not set yet");
+    setFiveYearVision(saved5YearVision || "Not set yet");
 
     const savedBigGoalYear = localStorage.getItem("bigGoal");
-    setBigGoalYear(savedBigGoalYear || "not set yet");
+    setBigGoalYear(savedBigGoalYear || "Not set yet");
     
     if (!api) return;
 
@@ -106,9 +106,14 @@ export function DailyPlanClient() {
       const selectedIndex = api.selectedScrollSnap();
       setCurrent(selectedIndex);
       const selectedDate = daysOf2026[selectedIndex];
+      
       const monthIndex = getMonth(selectedDate);
       const monthlyGoals = JSON.parse(localStorage.getItem("monthlyGoals") || "[]");
-      setBigGoalMonth(monthlyGoals[monthIndex] || "not set yet");
+      setBigGoalMonth(monthlyGoals[monthIndex] || "Not set yet");
+
+      const weekKey = format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const savedWeeklyGoals = JSON.parse(localStorage.getItem('weeklyGoals') || '{}');
+      setBigGoalWeek(savedWeeklyGoals[weekKey]?.bigGoal || "Not set yet");
     };
 
     api.on("select", onSelect);
@@ -132,7 +137,6 @@ export function DailyPlanClient() {
       gratitude: "",
       habits: dailyHabits.reduce((acc, habit) => ({...acc, [habit]: false}), {}),
       todaysBigGoal: "",
-      weeklyBigGoal: "",
     };
   };
 
@@ -171,7 +175,7 @@ export function DailyPlanClient() {
       updatePlanForDay(date, { schedule: newSchedule });
   }
 
-  const handleGenericChange = (date: Date, field: "reflection" | "gratitude" | "todaysBigGoal" | "weeklyBigGoal", value: string) => {
+  const handleGenericChange = (date: Date, field: "reflection" | "gratitude" | "todaysBigGoal", value: string) => {
     updatePlanForDay(date, { [field]: value });
   }
   
@@ -237,27 +241,29 @@ export function DailyPlanClient() {
         </div>
 
         <Card className="mb-6">
-            <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="space-y-1 bg-muted/50 p-2 rounded-md">
-                    <p className="text-xs font-bold text-primary uppercase">5-Year Vision</p>
-                    <p className="text-xs font-semibold truncate" title={fiveYearVision}>{fiveYearVision}</p>
+            <CardHeader>
+                <CardTitle>High-Level Focus</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Label className="w-36 font-semibold text-muted-foreground">5 Year Vision:</Label>
+                        <Input value={fiveYearVision} readOnly disabled className="font-bold" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Label className="w-36 font-semibold text-muted-foreground">Big Goal for YEAR:</Label>
+                        <Input value={bigGoalYear} readOnly disabled className="font-bold" />
+                    </div>
                 </div>
-                 <div className="space-y-1 bg-muted/50 p-2 rounded-md">
-                    <p className="text-xs font-bold text-primary uppercase">1-Year Big Goal</p>
-                    <p className="text-xs font-semibold truncate" title={bigGoalYear}>{bigGoalYear}</p>
-                </div>
-                 <div className="space-y-1 bg-muted/50 p-2 rounded-md">
-                    <p className="text-xs font-bold text-primary uppercase">Goal for the Month</p>
-                    <p className="text-xs font-semibold truncate" title={bigGoalMonth}>{bigGoalMonth}</p>
-                </div>
-                 <div className="space-y-1 bg-muted/50 p-2 rounded-md">
-                    <p className="text-xs font-bold text-primary uppercase">Weekly Big Goal</p>
-                    <Input 
-                        className="text-xs h-6 text-center font-semibold" 
-                        placeholder="not set yet"
-                        value={planForCurrentDay.weeklyBigGoal}
-                        onChange={e => handleGenericChange(currentDay, "weeklyBigGoal", e.target.value)}
-                    />
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Label className="w-36 font-semibold text-muted-foreground">Big Goal for MONTH:</Label>
+                        <Input value={bigGoalMonth} readOnly disabled className="font-bold" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Label className="w-36 font-semibold text-muted-foreground">Big Goal for WEEK:</Label>
+                        <Input value={bigGoalWeek} readOnly disabled className="font-bold" />
+                    </div>
                 </div>
             </CardContent>
         </Card>

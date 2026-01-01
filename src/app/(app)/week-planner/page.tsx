@@ -46,6 +46,15 @@ type PersonToConnect = {
     connected: boolean;
 };
 
+type WeeklyPlanData = {
+    bigGoal: string;
+    weeklyGoals: WeeklyGoal[];
+    goalsAchieved: number;
+    selectedAffirmations: string[];
+    peopleToConnect: PersonToConnect[];
+    schedule: Record<string, Record<string, string>>;
+}
+
 export default function WeekPlannerPage() {
   const { toast } = useToast();
   const [week, setWeek] = React.useState(new Date());
@@ -53,39 +62,52 @@ export default function WeekPlannerPage() {
   const [fiveYearVision, setFiveYearVision] = React.useState("");
   const [bigGoalYear, setBigGoalYear] = React.useState("");
   const [bigGoalMonth, setBigGoalMonth] = React.useState("");
-  const [bigGoalWeek, setBigGoalWeek] = React.useState("");
 
-  const [weeklyGoals, setWeeklyGoals] = React.useState<WeeklyGoal[]>(initialGoals);
-  const [goalsAchieved, setGoalsAchieved] = React.useState(0);
-  
+  const [weeklyPlans, setWeeklyPlans] = React.useState<Record<string, Partial<WeeklyPlanData>>>({});
+
   const [availableAffirmations, setAvailableAffirmations] = React.useState<Affirmation[]>([]);
-  const [selectedAffirmations, setSelectedAffirmations] = React.useState<string[]>([]);
   
   const [habits, setHabits] = React.useState("");
-  const [peopleToConnect, setPeopleToConnect] = React.useState<PersonToConnect[]>([]);
+  
+  const weekStart = startOfWeek(week, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
+  const weekKey = format(weekStart, 'yyyy-MM-dd');
 
+  const getPlanForWeek = React.useCallback((key: string): Partial<WeeklyPlanData> => {
+    return weeklyPlans[key] || {
+        bigGoal: "",
+        weeklyGoals: initialGoals,
+        goalsAchieved: 0,
+        selectedAffirmations: [],
+        peopleToConnect: [],
+        schedule: {},
+    };
+  }, [weeklyPlans]);
+
+  const currentPlan = getPlanForWeek(weekKey);
+  
+  const updatePlanForWeek = (key: string, newPlan: Partial<WeeklyPlanData>) => {
+    const existingPlan = getPlanForWeek(key);
+    setWeeklyPlans(prev => ({
+        ...prev,
+        [key]: { ...existingPlan, ...newPlan }
+    }));
+  };
 
   React.useEffect(() => {
-    const saved5YearVision = localStorage.getItem("5YearVision");
-    if (saved5YearVision) {
-        setFiveYearVision(saved5YearVision);
-    } else {
-        setFiveYearVision("Not set yet");
-    }
-
-    const savedBigGoal = localStorage.getItem("bigGoal");
-    if (savedBigGoal) {
-        setBigGoalYear(savedBigGoal);
-    } else {
-        setBigGoalYear("Not set yet");
+    const savedWeeklyGoals = localStorage.getItem('weeklyGoals');
+    if (savedWeeklyGoals) {
+        setWeeklyPlans(JSON.parse(savedWeeklyGoals));
     }
     
+    const saved5YearVision = localStorage.getItem("5YearVision");
+    setFiveYearVision(saved5YearVision || "Not set yet");
+
+    const savedBigGoal = localStorage.getItem("bigGoal");
+    setBigGoalYear(savedBigGoal || "Not set yet");
+    
     const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
-    if (savedMonthlyBigGoal) {
-      setBigGoalMonth(savedMonthlyBigGoal);
-    } else {
-      setBigGoalMonth("Not set yet");
-    }
+    setBigGoalMonth(savedMonthlyBigGoal || "Not set yet");
     
     const savedAffirmations = localStorage.getItem("affirmations");
     if (savedAffirmations) {
@@ -102,60 +124,66 @@ export default function WeekPlannerPage() {
     if(startHabit && startHabit !== 'undefined') habitsText += `Start: ${startHabit}\n`;
     if(stopHabit && stopHabit !== 'undefined') habitsText += `Stop: ${stopHabit}`;
 
-    if(!habitsText.trim()) {
-        setHabits("Not set yet");
-    } else {
-        setHabits(habitsText.trim());
-    }
+    setHabits(habitsText.trim() || "Not set yet");
 
   }, [week]);
 
-  const weekStart = startOfWeek(week, { weekStartsOn: 1 });
-  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
   const handleSave = () => {
+    localStorage.setItem('weeklyGoals', JSON.stringify(weeklyPlans));
     toast({
       title: "Week Planner Saved!",
       description: "Your plan for the week has been successfully saved.",
     });
   };
+
+  const handleBigGoalWeekChange = (value: string) => {
+    updatePlanForWeek(weekKey, { bigGoal: value });
+  };
   
   const handleAddGoal = () => {
-    setWeeklyGoals([...weeklyGoals, { id: Date.now().toString(), text: "", priority: false }]);
+    const newGoals = [...(currentPlan.weeklyGoals || []), { id: Date.now().toString(), text: "", priority: false }];
+    updatePlanForWeek(weekKey, { weeklyGoals: newGoals });
   };
 
   const handleRemoveGoal = (id: string) => {
-    setWeeklyGoals(weeklyGoals.filter(goal => goal.id !== id));
+    const newGoals = (currentPlan.weeklyGoals || []).filter(goal => goal.id !== id);
+    updatePlanForWeek(weekKey, { weeklyGoals: newGoals });
   };
 
   const handleGoalChange = (id: string, text: string) => {
-    setWeeklyGoals(weeklyGoals.map(goal => goal.id === id ? { ...goal, text } : goal));
+    const newGoals = (currentPlan.weeklyGoals || []).map(goal => goal.id === id ? { ...goal, text } : goal);
+    updatePlanForWeek(weekKey, { weeklyGoals: newGoals });
   };
   
   const handlePriorityChange = (id: string) => {
-    setWeeklyGoals(weeklyGoals.map(goal => goal.id === id ? { ...goal, priority: !goal.priority } : goal));
+    const newGoals = (currentPlan.weeklyGoals || []).map(goal => goal.id === id ? { ...goal, priority: !goal.priority } : goal);
+    updatePlanForWeek(weekKey, { weeklyGoals: newGoals });
   };
 
   const handleAffirmationSelect = (affirmationText: string) => {
-    setSelectedAffirmations(prev => {
-        if (prev.includes(affirmationText)) {
-            return prev.filter(a => a !== affirmationText);
-        }
-        if (prev.length < 4) {
-            return [...prev, affirmationText];
-        }
+    const currentAffirmations = currentPlan.selectedAffirmations || [];
+    let newAffirmations: string[];
+    if (currentAffirmations.includes(affirmationText)) {
+        newAffirmations = currentAffirmations.filter(a => a !== affirmationText);
+    } else if (currentAffirmations.length < 4) {
+        newAffirmations = [...currentAffirmations, affirmationText];
+    } else {
         toast({
             title: "Limit Reached",
             description: "You can select up to 4 affirmations.",
             variant: "destructive"
         })
-        return prev;
-    });
+        newAffirmations = currentAffirmations;
+    }
+    updatePlanForWeek(weekKey, { selectedAffirmations: newAffirmations });
   };
 
   const handleAddPerson = () => {
-    if (peopleToConnect.length < 7) {
-        setPeopleToConnect([...peopleToConnect, {id: Date.now().toString(), name: "", connected: false}]);
+    const currentPeople = currentPlan.peopleToConnect || [];
+    if (currentPeople.length < 7) {
+        const newPeople = [...currentPeople, {id: Date.now().toString(), name: "", connected: false}];
+        updatePlanForWeek(weekKey, { peopleToConnect: newPeople });
     } else {
         toast({
             title: "Limit Reached",
@@ -166,19 +194,27 @@ export default function WeekPlannerPage() {
   };
 
   const handleRemovePerson = (id: string) => {
-    setPeopleToConnect(peopleToConnect.filter(p => p.id !== id));
+    const newPeople = (currentPlan.peopleToConnect || []).filter(p => p.id !== id);
+    updatePlanForWeek(weekKey, { peopleToConnect: newPeople });
   };
 
   const handlePersonNameChange = (id: string, name: string) => {
-    setPeopleToConnect(peopleToConnect.map(p => p.id === id ? {...p, name} : p));
+    const newPeople = (currentPlan.peopleToConnect || []).map(p => p.id === id ? {...p, name} : p);
+    updatePlanForWeek(weekKey, { peopleToConnect: newPeople });
   };
 
   const handleToggleConnected = (id: string) => {
-    setPeopleToConnect(peopleToConnect.map(p => p.id === id ? {...p, connected: !p.connected} : p));
+    const newPeople = (currentPlan.peopleToConnect || []).map(p => p.id === id ? {...p, connected: !p.connected} : p);
+     updatePlanForWeek(weekKey, { peopleToConnect: newPeople });
   };
 
-  const goalsSet = weeklyGoals.length;
-  const score = goalsSet > 0 ? Math.round((goalsAchieved / goalsSet) * 100) : 0;
+  const handleGoalsAchievedChange = (value: number) => {
+    updatePlanForWeek(weekKey, { goalsAchieved: value });
+  };
+
+  const goalsSet = currentPlan.weeklyGoals?.length || 0;
+  const goalsAchievedValue = currentPlan.goalsAchieved || 0;
+  const score = goalsSet > 0 ? Math.round((goalsAchievedValue / goalsSet) * 100) : 0;
 
   return (
     <div>
@@ -209,7 +245,7 @@ export default function WeekPlannerPage() {
             </div>
              <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">Big Goal for WEEK:</Label>
-                <Input placeholder="Define your main goal for this week..." value={bigGoalWeek} onChange={e => setBigGoalWeek(e.target.value)} />
+                <Input placeholder="Define your main goal for this week..." value={currentPlan.bigGoal} onChange={e => handleBigGoalWeekChange(e.target.value)} />
             </div>
           </div>
         </CardContent>
@@ -223,7 +259,7 @@ export default function WeekPlannerPage() {
             <div>
                 <h3 className="font-bold mb-2 text-center">Goals for the Week</h3>
                 <div className="space-y-2 max-w-lg mx-auto">
-                    {weeklyGoals.map(goal => (
+                    {(currentPlan.weeklyGoals || []).map(goal => (
                         <div key={goal.id} className="flex items-center gap-2">
                             <Checkbox checked={goal.priority} onCheckedChange={() => handlePriorityChange(goal.id)} title="Mark as priority" />
                             <Input value={goal.text} onChange={e => handleGoalChange(goal.id, e.target.value)} className="h-8" />
@@ -275,7 +311,7 @@ export default function WeekPlannerPage() {
             <CardContent>
                 <div className="space-y-2">
                     <Label>Select up to 4 affirmations</Label>
-                    <Select onValueChange={handleAffirmationSelect} value={selectedAffirmations.join(', ')}>
+                    <Select onValueChange={handleAffirmationSelect} value={(currentPlan.selectedAffirmations || []).join(', ')}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select affirmations for the week" />
                         </SelectTrigger>
@@ -287,7 +323,7 @@ export default function WeekPlannerPage() {
                                         value={affirmation.text} 
                                         onSelect={(e) => { e.preventDefault(); handleAffirmationSelect(affirmation.text)}}>
                                         <div className="flex items-center">
-                                            <Checkbox checked={selectedAffirmations.includes(affirmation.text)} className="mr-2"/>
+                                            <Checkbox checked={(currentPlan.selectedAffirmations || []).includes(affirmation.text)} className="mr-2"/>
                                             <span>{affirmation.text}</span>
                                         </div>
                                     </SelectItem>
@@ -298,7 +334,7 @@ export default function WeekPlannerPage() {
                         </SelectContent>
                     </Select>
                      <div className="flex flex-wrap gap-1 pt-2">
-                        {selectedAffirmations.map(affirmation => <Badge key={affirmation} variant="secondary">{affirmation}</Badge>)}
+                        {(currentPlan.selectedAffirmations || []).map(affirmation => <Badge key={affirmation} variant="secondary">{affirmation}</Badge>)}
                     </div>
                 </div>
             </CardContent>
@@ -314,7 +350,7 @@ export default function WeekPlannerPage() {
                 <CardHeader><CardTitle>People to Connect with This Week</CardTitle></CardHeader>
                 <CardContent>
                     <div className="space-y-2">
-                        {peopleToConnect.map(person => (
+                        {(currentPlan.peopleToConnect || []).map(person => (
                             <div key={person.id} className="flex items-center gap-2">
                                 <Checkbox id={`person-${person.id}`} checked={person.connected} onCheckedChange={() => handleToggleConnected(person.id)} />
                                 <Input
@@ -328,7 +364,7 @@ export default function WeekPlannerPage() {
                                 </Button>
                             </div>
                         ))}
-                        <Button variant="outline" size="sm" className="w-full" onClick={handleAddPerson} disabled={peopleToConnect.length >= 7}>
+                        <Button variant="outline" size="sm" className="w-full" onClick={handleAddPerson} disabled={(currentPlan.peopleToConnect || []).length >= 7}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Person
                         </Button>
                     </div>
@@ -346,7 +382,7 @@ export default function WeekPlannerPage() {
             </div>
              <div className="flex items-center gap-2">
                 <Label># Goals Achieved:</Label>
-                <Input type="number" value={goalsAchieved} onChange={e => setGoalsAchieved(Number(e.target.value))} className="w-16" />
+                <Input type="number" value={goalsAchievedValue} onChange={e => handleGoalsAchievedChange(Number(e.target.value))} className="w-16" />
             </div>
             <div className="flex items-center gap-2">
                 <Label>Score:</Label>
@@ -363,5 +399,3 @@ export default function WeekPlannerPage() {
     </div>
   );
 }
-
-    
