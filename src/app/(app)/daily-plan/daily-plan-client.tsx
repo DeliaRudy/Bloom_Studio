@@ -201,7 +201,7 @@ export function DailyPlanClient() {
     }
   }
   
-  const currentDay = daysOfYear[current];
+  const currentDay = daysOfYear[current] || new Date();
   const planForCurrentDay = getPlanForDay(currentDay);
 
   return (
