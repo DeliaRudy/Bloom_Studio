@@ -16,6 +16,16 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Sparkles, TrendingUp, Users, CheckCircle, Repeat } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getProductivityAnalysis, type AnalysisState } from "./actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
 
 type StatCardProps = {
   title: string;
@@ -80,26 +90,43 @@ function DashboardClient() {
     uniquePeopleContacted: 0,
   });
   const [isLoading, setIsLoading] = React.useState(true);
+  const [analysis, setAnalysis] = React.useState<AnalysisState>({ summary: null, detailed: null, error: null });
+  const [isAnalysisLoading, setIsAnalysisLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchAllData = async () => {
       if (!user) return;
       setIsLoading(true);
+      setIsAnalysisLoading(true);
 
-      const dailyPlansQuery = query(collection(firestore, `users/${user.uid}/sessions/default/dailyPlans`));
-      const weeklyPlansQuery = query(collection(firestore, `users/${user.uid}/sessions/default/weeklyPlans`));
-      const monthlyGoalsQuery = query(collection(firestore, `users/${user.uid}/sessions/default/monthlyGoals`));
+      const collectionsToFetch = [
+        'dailyPlans', 'weeklyPlans', 'monthlyGoals', 'actionPlanItems',
+        'successDefinitions', 'lifeVisionMilestones', 'fiveYearVisionPrompts',
+        'visionStatements', 'visionBoardImages', 'categoryGoals', 'travelMapPins',
+        'journalEntries', 'dailyHabits', 'habitsToManage', 'cycles'
+      ];
+      const allData: Record<string, any> = {};
 
-      const [dailySnapshot, weeklySnapshot, monthlySnapshot] = await Promise.all([
-        getDocs(dailyPlansQuery),
-        getDocs(weeklyPlansQuery),
-        getDocs(monthlyGoalsQuery),
-      ]);
-
-      const dailyPlans = dailySnapshot.docs.map(doc => doc.data() as DailyPlan);
-      const weeklyPlans = weeklySnapshot.docs.map(doc => doc.data() as WeeklyPlan);
-      const monthlyGoals = monthlySnapshot.docs.map(doc => doc.data() as MonthlyGoal);
+      const dataPromises = collectionsToFetch.map(async (coll) => {
+        try {
+          const collRef = collection(firestore, `users/${user.uid}/sessions/default/${coll}`);
+          const snapshot = await getDocs(collRef);
+          return { name: coll, docs: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
+        } catch (e) {
+          console.warn(`Could not fetch collection ${coll}:`, e);
+          return { name: coll, docs: [] };
+        }
+      });
       
+      const allCollections = await Promise.all(dataPromises);
+      allCollections.forEach(coll => {
+          allData[coll.name] = coll.docs;
+      });
+
+      const dailyPlans = (allData.dailyPlans || []) as DailyPlan[];
+      const weeklyPlans = (allData.weeklyPlans || []) as WeeklyPlan[];
+      const monthlyGoals = (allData.monthlyGoals || []) as MonthlyGoal[];
+
       // Calculations
       let totalDailyCompletion = 0;
       dailyPlans.forEach(plan => {
@@ -114,7 +141,7 @@ function DashboardClient() {
       let allPeople = new Set<string>();
       weeklyPlans.forEach(plan => {
           const total = plan.goals?.length || 0;
-          const completed = plan.goals?.filter(g => g.priority).length || 0; // Assuming priority means met
+          const completed = plan.goals?.filter(g => g.priority).length || 0;
           totalWeeklyGoalsMet += completed;
           if (total > 0) totalWeeklyCompletion += completed / total;
           plan.peopleToConnect?.filter(p => p.connected).forEach(p => allPeople.add(p.name));
@@ -140,7 +167,6 @@ function DashboardClient() {
       });
       const avgHabitScore = dailyPlans.length > 0 ? totalHabitScore / dailyPlans.length : 0;
 
-
       setStats({
         avgDailyTasks,
         avgWeeklyGoals,
@@ -150,14 +176,20 @@ function DashboardClient() {
         totalWeeklyGoalsMet,
         uniquePeopleContacted: allPeople.size,
       });
-
       setIsLoading(false);
+
+      // Trigger AI Analysis
+      const analysisResult = await getProductivityAnalysis({ allData: JSON.stringify(allData) });
+      setAnalysis(analysisResult);
+      setIsAnalysisLoading(false);
     };
 
     fetchAllData();
   }, [user, firestore]);
   
-  if (isLoading) {
+  const mainIsLoading = isLoading || isUserLoading;
+
+  if (mainIsLoading) {
       return (
           <div>
               <PageHeader
@@ -207,13 +239,41 @@ function DashboardClient() {
                     <Sparkles className="text-primary"/>
                     AI Productivity Analysis
                 </CardTitle>
-                <CardDescription>Get an AI-generated analysis of your productivity and suggestions for improvement.</CardDescription>
+                <CardDescription>An auto-generated analysis of your productivity and suggestions for improvement.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="text-center py-8 px-4 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground mb-4">Click the button to generate your personalized analysis.</p>
-                    <Button>Generate Analysis</Button>
-                </div>
+                {isAnalysisLoading ? (
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                ) : analysis.error ? (
+                    <p className="text-destructive">{analysis.error}</p>
+                ) : analysis.summary ? (
+                    <div className="prose prose-sm max-w-none">
+                       <p>{analysis.summary}</p>
+                        {analysis.detailed && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="link" className="p-0 h-auto">View Detailed Analysis</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[625px]">
+                              <DialogHeader>
+                                <DialogTitle>Detailed Productivity Analysis</DialogTitle>
+                                <DialogDescription>
+                                  Here is a more in-depth look at your progress.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="prose prose-sm max-w-none h-96 overflow-y-auto">
+                                <p>{analysis.detailed}</p>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground">No analysis available.</p>
+                )}
             </CardContent>
         </Card>
       </div>
