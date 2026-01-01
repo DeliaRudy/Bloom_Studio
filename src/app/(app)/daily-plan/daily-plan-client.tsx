@@ -485,7 +485,7 @@ export function DailyPlanClient() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                          <div className="grid grid-cols-[auto_1.5fr_1.5fr_1fr] gap-x-2 px-4 py-2">
+                          <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-x-2 px-4 py-2">
                             <Label className="font-semibold">Time</Label>
                             <Label className="font-semibold">Task</Label>
                             <Label className="font-semibold">Notes</Label>
@@ -496,7 +496,7 @@ export function DailyPlanClient() {
                             const time = new Date(`1970-01-01T${hour}`);
                             return (
                               <div key={hour}>
-                                <div className="grid grid-cols-[auto_1.5fr_1.5fr_1fr] items-center gap-x-2 px-4 py-2">
+                                <div className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-x-2 px-4 py-2">
                                   <Label className="font-semibold text-primary w-20">
                                     {format(time, 'h:mm a')}
                                   </Label>
@@ -539,7 +539,7 @@ export function DailyPlanClient() {
                                       )
                                     }
                                   >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-28">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -608,5 +608,3 @@ export function DailyPlanClient() {
     </div>
   );
 }
-
-    
