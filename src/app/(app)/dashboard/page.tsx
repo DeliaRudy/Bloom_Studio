@@ -16,7 +16,7 @@ import {
   CalendarCheck,
   CalendarHeart,
   CalendarPlus,
-  CalendarWeek,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -109,7 +109,7 @@ const features = [
     href: "/week-planner",
     title: "Week Planner",
     description: "Plan your week in detail.",
-    icon: CalendarWeek,
+    icon: CalendarDays,
   },
 ];
 
