@@ -1,14 +1,22 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import * as React from "react";
 
+type Trait = {
+    word: string;
+    meaning: string;
+};
+
 export default function PersonaDefinitionPage() {
     const [reasons, setReasons] = React.useState(Array(5).fill(""));
+    const [traits, setTraits] = React.useState<Trait[]>(Array(5).fill({ word: "", meaning: "" }));
     const { toast } = useToast();
 
     const handleReasonChange = (index: number, value: string) => {
@@ -17,23 +25,30 @@ export default function PersonaDefinitionPage() {
         setReasons(newReasons);
     };
 
+    const handleTraitChange = (index: number, field: keyof Trait, value: string) => {
+        const newTraits = [...traits];
+        newTraits[index] = { ...newTraits[index], [field]: value };
+        setTraits(newTraits);
+    };
+
     const handleSave = () => {
         console.log("Saving Persona Definition (Why):", reasons);
+        console.log("Saving Persona Definition (Who):", traits);
         toast({
-            title: "Your 'Why' has been saved!",
-            description: "Connecting with your reasons is a huge step.",
+            title: "Your Persona has been saved!",
+            description: "Connecting with your reasons and traits is a huge step.",
         });
     }
 
     return (
         <div>
             <PageHeader
-                title="Define Your Why"
-                description="If your WHY is strong enough nothing will stop you from achieving your goals. Defining your WHY helps you to emotionally connect to your Ambition and Vision which gives you reasons to dig deep and overcome your challenges."
+                title="Define Your Persona"
+                description="If your WHY is strong enough, nothing will stop you. Defining WHO you need to become gives you the character to succeed. This gives you reasons to dig deep and overcome your challenges."
             />
-            <Card>
+            <Card className="mb-8">
                 <CardHeader>
-                    <CardTitle className="font-headline">I want to achieve my Ambition, Vision and Goals because...</CardTitle>
+                    <CardTitle className="font-headline">My 'Why': I want to achieve my Ambition, Vision and Goals because...</CardTitle>
                     <CardDescription>Write at least 5 reasons WHY you want to achieve your Ambition, Vision and Goals.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -51,11 +66,47 @@ export default function PersonaDefinitionPage() {
                 </CardContent>
             </Card>
 
+            <Card className="mb-8">
+                <CardHeader>
+                    <CardTitle className="font-headline">My 'Who': The person I need to become</CardTitle>
+                    <CardDescription>
+                        Choose at least 5 words that define who you need to become. Explain what each word means to you.
+                        <br />
+                        <span className="text-xs text-muted-foreground">
+                            Example words: passionate, inspirational, famous, fit, healthy, successful, brave, calm, patient, great, kind, determined, considerate, energetic, renowned, respected, unstoppable, motivational, committed.
+                        </span>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {traits.map((trait, index) => (
+                         <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                            <div className="flex items-center gap-4 md:col-span-1">
+                               <span className="text-lg font-semibold text-muted-foreground">{index + 1}.</span>
+                                <Input 
+                                    type="text"
+                                    value={trait.word}
+                                    onChange={(e) => handleTraitChange(index, 'word', e.target.value)}
+                                    placeholder="Trait (e.g., Brave)"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <Textarea 
+                                    value={trait.meaning}
+                                    onChange={(e) => handleTraitChange(index, 'meaning', e.target.value)}
+                                    placeholder="Explain what this word means to you..."
+                                    rows={2}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
             <div className="flex flex-col items-center gap-4 mt-8">
-                <Button size="lg" onClick={handleSave}>Save My 'Why'</Button>
+                <Button size="lg" onClick={handleSave}>Save My Persona</Button>
                 <blockquote className="text-sm italic text-muted-foreground mt-4 text-center max-w-md">
-                    &ldquo;People lose their way when they lose their WHY.&rdquo;
-                    <cite className="not-italic font-semibold"> - Michael Hyatt</cite>
+                    &ldquo;Success is not what you have, but who you are.&rdquo;
+                    <cite className="not-italic font-semibold"> - Bo Bennett</cite>
                 </blockquote>
             </div>
         </div>
