@@ -93,11 +93,19 @@ const flowStyles: Record<
 };
 
 const phaseStyles = {
-  menstruation: 'bg-red-100/50 dark:bg-red-900/20',
-  follicular: 'bg-green-100/50 dark:bg-green-900/20',
-  ovulation: 'bg-yellow-100/50 dark:bg-yellow-900/20',
-  luteal: 'bg-blue-100/50 dark:bg-blue-900/20',
+  menstruation: 'bg-primary/20',
+  follicular: 'bg-secondary/30',
+  ovulation: 'bg-accent/40',
+  luteal: 'bg-muted',
 };
+
+const phaseIndicatorStyles = {
+  menstruation: 'bg-primary',
+  follicular: 'bg-secondary',
+  ovulation: 'bg-accent',
+  luteal: 'bg-muted-foreground',
+};
+
 
 const allSymptoms = [
   'Cramps',
@@ -492,7 +500,7 @@ export default function CycleTrackerPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                 {Object.entries(phaseStyles).map(([key, style]) => (
+                 {Object.entries(phaseIndicatorStyles).map(([key, style]) => (
                     <div key={key} className="flex items-center gap-3">
                         <div className={cn('w-4 h-4 rounded-full', style)}></div>
                         <span className="text-sm font-medium capitalize">{key}</span>
