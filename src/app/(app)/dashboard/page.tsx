@@ -21,6 +21,7 @@ import {
   ClipboardList,
   BookOpenCheck,
   Settings,
+  Droplets,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -128,6 +129,12 @@ const features = [
     icon: BookOpenCheck,
   },
   {
+    href: "/cycle-tracker",
+    title: "Cycle Tracker",
+    description: "Track your menstrual cycle.",
+    icon: Droplets,
+  },
+  {
     href: "/settings",
     title: "Settings",
     description: "Manage your account and preferences.",
@@ -143,7 +150,7 @@ export default function DashboardPage() {
         description="Your personal space to define, visualize, and track your long-term goals. Let's start blooming."
       />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {features.map((feature) => (
+        {features.sort((a, b) => a.title.localeCompare(b.title)).map((feature) => (
           <Link href={feature.href} key={feature.href}>
             <Card className="h-full hover:bg-card/90 hover:shadow-md transition-all duration-200">
               <CardHeader className="flex flex-row items-center gap-4">

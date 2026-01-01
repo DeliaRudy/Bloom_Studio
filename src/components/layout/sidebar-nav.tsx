@@ -34,6 +34,7 @@ import {
   ClipboardList,
   BookOpenCheck,
   Settings,
+  Droplets,
 } from "lucide-react"
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
@@ -60,6 +61,7 @@ const plansLinks = [
     { href: "/month-planner", label: "Month Planner", icon: CalendarPlus },
     { href: "/week-planner", label: "Week Planner", icon: CalendarDays },
     { href: "/daily-plan", label: "Daily Plan", icon: BookOpenCheck },
+    { href: "/cycle-tracker", label: "Cycle Tracker", icon: Droplets },
 ]
 
 export function SidebarNav() {
@@ -123,7 +125,7 @@ export function SidebarNav() {
             </SidebarGroup>
 
             <SidebarGroup>
-                 <Collapsible defaultOpen={false}>
+                 <Collapsible defaultOpen={true}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
                             <DraftingCompass className="h-4 w-4" />
