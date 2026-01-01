@@ -128,10 +128,8 @@ export function DailyPlanClient() {
       const selectedDate = daysOfYear[selectedIndex];
 
       const monthIndex = getMonth(selectedDate);
-      const monthlyGoals = JSON.parse(
-        localStorage.getItem('monthlyGoals') || '[]'
-      );
-      setBigGoalMonth(monthlyGoals[monthIndex] || 'Not set yet');
+      const monthlyGoalsData = localStorage.getItem('monthlyBigGoal');
+      setBigGoalMonth(monthlyGoalsData || 'Not set yet');
 
       const weekKey = format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
       const savedWeeklyGoals = JSON.parse(localStorage.getItem('weeklyGoals') || '{}');
@@ -308,15 +306,16 @@ export function DailyPlanClient() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Label className="w-36 font-semibold text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <Label className="w-36 pt-2 font-semibold text-muted-foreground">
                   5 Year Vision:
                 </Label>
-                <Input
+                <Textarea
                   value={fiveYearVision}
                   readOnly
                   disabled
-                  className="font-bold"
+                  className="font-bold min-h-0"
+                  rows={1}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -403,6 +402,7 @@ export function DailyPlanClient() {
                           {plan.priorities.map((p) => (
                             <div key={p.id} className="flex items-center gap-3">
                               <Checkbox
+                                id={`${day.toISOString()}-${p.id}`}
                                 checked={p.completed}
                                 onCheckedChange={(checked) =>
                                   handlePriorityChange(
@@ -423,11 +423,11 @@ export function DailyPlanClient() {
                                     e.target.value
                                   )
                                 }
-                                className={
+                                className={cn('h-9',
                                   p.completed
                                     ? 'line-through text-muted-foreground'
                                     : ''
-                                }
+                                )}
                               />
                             </div>
                           ))}
@@ -448,20 +448,14 @@ export function DailyPlanClient() {
                         </CardHeader>
                         <CardContent>
                           {dailyHabits.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                            <div className="space-y-2">
                               {dailyHabits.map((habit) => (
                                 <div
                                   key={habit}
-                                  className="flex items-center gap-2 cursor-pointer"
+                                  className="flex items-center gap-3 cursor-pointer rounded-md p-2 hover:bg-muted/50"
                                   onClick={() => handleHabitToggle(day, habit)}
                                 >
-                                  <Heart
-                                    className={cn(
-                                      'w-5 h-5 text-primary transition-all',
-                                      plan.habits[habit] &&
-                                        'fill-primary text-primary-foreground'
-                                    )}
-                                  />
+                                  <Checkbox checked={plan.habits[habit]} />
                                   <span
                                     className={cn(
                                       'text-sm',
@@ -475,9 +469,9 @@ export function DailyPlanClient() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">
-                              No daily habits defined yet. Go to the Daily
-                              Habits page to add some.
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No daily habits defined yet. Go to the{' '}
+                               <Link href="/daily-habits" className="underline font-semibold">Daily Habits</Link> page to add some.
                             </p>
                           )}
                         </CardContent>
