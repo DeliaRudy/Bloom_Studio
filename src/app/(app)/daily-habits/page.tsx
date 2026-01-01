@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -36,11 +37,11 @@ export default function DailyHabitsPage() {
   };
 
   const handleSave = () => {
-    const filteredHabits = dailyHabits.filter(h => h);
-    
-    localStorage.setItem("dailyHabits", JSON.stringify(filteredHabits));
+    // We save all entries, even empty ones, to preserve order.
+    // The filter will happen on the daily plan page.
+    localStorage.setItem("dailyHabits", JSON.stringify(dailyHabits));
 
-    console.log("Daily Habits:", filteredHabits);
+    console.log("Daily Habits:", dailyHabits.filter(h => h));
     toast({
       title: "Daily Habits Saved",
       description: "Your daily habits have been successfully saved.",
@@ -60,7 +61,7 @@ export default function DailyHabitsPage() {
             <ClipboardList className="h-6 w-6 text-primary" />
             My Daily Habits
           </CardTitle>
-          <CardDescription>List up to 20 habits to practice daily.</CardDescription>
+          <CardDescription>List up to 20 habits to practice daily. These will appear in your Daily Plan.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {dailyHabits.map((habit, index) => (

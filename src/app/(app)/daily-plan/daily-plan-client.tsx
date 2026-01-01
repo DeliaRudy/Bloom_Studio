@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { eachDayOfInterval, startOfYear, endOfYear, format, isToday, differenceInDays } from "date-fns";
+import { Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Priority = {
   id: string;
@@ -61,7 +63,8 @@ export function DailyPlanClient() {
     }
     const savedHabits = localStorage.getItem("dailyHabits");
     if (savedHabits) {
-        setDailyHabits(JSON.parse(savedHabits));
+        const parsedHabits = JSON.parse(savedHabits);
+        setDailyHabits(parsedHabits.filter((h: string) => h && h.trim() !== ''));
     }
 
     if (!api) return;
@@ -157,6 +160,9 @@ export function DailyPlanClient() {
         <CarouselContent>
           {daysOf2026.map((day, index) => {
             const plan = getPlanForDay(day);
+            const completedHabits = Object.values(plan.habits).filter(Boolean).length;
+            const totalHabits = dailyHabits.length;
+            const disciplinePercentage = totalHabits > 0 ? Math.round((completedHabits / totalHabits) * 100) : 0;
             return(
             <CarouselItem key={index}>
               <div className="p-1">
@@ -177,15 +183,28 @@ export function DailyPlanClient() {
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Daily Habits</CardTitle>
+                                <CardTitle>Daily Discipline Checklist</CardTitle>
+                                <CardDescription className="flex items-center gap-2 pt-2 text-primary">
+                                    <Heart className="w-8 h-8 text-primary" />
+                                    <span className="text-lg font-bold">{completedHabits} / {totalHabits}</span>
+                                    <span className="text-lg">&mdash; {disciplinePercentage}% discipline</span>
+                                </CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-2">
-                                {dailyHabits.length > 0 ? dailyHabits.map(habit => (
-                                    <div key={habit} className="flex items-center gap-3">
-                                        <Checkbox id={`habit-${index}-${habit}`} checked={plan.habits[habit] || false} onCheckedChange={() => handleHabitToggle(day, habit)} />
-                                        <Label htmlFor={`habit-${index}-${habit}`} className="text-sm">{habit}</Label>
+                            <CardContent>
+                                {dailyHabits.length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                                        {dailyHabits.map(habit => (
+                                            <div 
+                                                key={habit} 
+                                                className="flex items-center gap-2 cursor-pointer"
+                                                onClick={() => handleHabitToggle(day, habit)}
+                                            >
+                                                <Heart className={cn("w-5 h-5 text-primary transition-all", plan.habits[habit] && "fill-primary text-primary-foreground")} />
+                                                <span className={cn("text-sm", plan.habits[habit] && "line-through text-muted-foreground")}>{habit}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                )) : <p className="text-sm text-muted-foreground">No daily habits defined yet.</p>}
+                                ) : <p className="text-sm text-muted-foreground">No daily habits defined yet. Go to the Daily Habits page to add some.</p>}
                             </CardContent>
                         </Card>
                     </div>
