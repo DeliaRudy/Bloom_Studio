@@ -12,13 +12,14 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BellRing, Trash2, Mail, Clock, Save } from 'lucide-react';
+import { BellRing, Trash2, Mail, Clock, Save, Send } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Notification = {
   id: string;
@@ -55,9 +56,11 @@ const mockNotifications: Notification[] = [
     title: 'Cycle Phase Change',
     description: 'You are now entering your Luteal phase. Time to focus on details.',
     read: true,
-date: '5 days ago',
+    date: '5 days ago',
   },
 ];
+
+type TestNotificationType = 'generic' | 'planDay' | 'productivity' | 'habits' | 'reflection';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = React.useState(mockNotifications);
@@ -69,6 +72,8 @@ export default function NotificationsPage() {
   const [productivityReminders, setProductivityReminders] = React.useState(['09:00', '13:00', '16:00']);
   const [habitsReminder, setHabitsReminder] = React.useState(true);
   const [reflectionReminder, setReflectionReminder] = React.useState(true);
+
+  const [testNotificationType, setTestNotificationType] = React.useState<TestNotificationType>('generic');
 
   const { toast } = useToast();
 
@@ -112,6 +117,48 @@ export default function NotificationsPage() {
     const newTimes = [...productivityReminders];
     newTimes[index] = value;
     setProductivityReminders(newTimes);
+  }
+
+  const handleSendTest = () => {
+    let toastTitle = "Test Notification";
+    let toastDescription = "This is a generic test notification.";
+
+    switch (testNotificationType) {
+        case 'planDay':
+            toastTitle = "Reminder: Plan Your Day!";
+            toastDescription = "Good morning! It's 8am. Take a few moments to set your priorities for a successful day ahead.";
+            break;
+        case 'productivity':
+            toastTitle = "Your Productivity Matrix is Ready!";
+            toastDescription = (
+                <div className="text-xs">
+                    <p className="font-bold">High Impact / Urgent:</p>
+                    <ul className="list-disc pl-4"><li>Finalize Q3 report</li></ul>
+                    <p className="font-bold mt-2">High Impact / Not Urgent:</p>
+                    <ul className="list-disc pl-4"><li>Brainstorm project alpha ideas</li></ul>
+                    <p className="font-bold mt-2">Low Impact / Urgent:</p>
+                    <ul className="list-disc pl-4"><li>RSVP to team lunch</li></ul>
+                    <p className="font-bold mt-2">Low Impact / Not Urgent:</p>
+                    <ul className="list-disc pl-4"><li>Organize desktop files</li></ul>
+                     <p className="font-bold mt-2 text-primary">2-Min Task: Reply to Jane's email</p>
+                </div>
+            );
+            break;
+        case 'habits':
+            toastTitle = "Habit Reminder: Remember Your 'Why'";
+            toastDescription = "Today's tasks involve a lot of focus. Remember your goal to 'Be More Disciplined' to power through them.";
+            break;
+        case 'reflection':
+            toastTitle = "Reminder: Time to Reflect";
+            toastDescription = "It's 8pm. How did today go? Take a moment to capture your thoughts and wins in your Daily Plan.";
+            break;
+    }
+
+    toast({
+        title: toastTitle,
+        description: toastDescription,
+        duration: 9000,
+    })
   }
 
   const filteredNotifications = showUnreadOnly
@@ -187,78 +234,107 @@ export default function NotificationsPage() {
             </CardContent>
         </Card>
 
-        <Card>
-            <CardHeader>
-                <div className="flex items-center gap-4">
-                    <Mail className="h-6 w-6 text-primary" />
-                    <CardTitle className="font-headline">Email Notification Settings</CardTitle>
-                </div>
-                 <CardDescription>Configure when you receive email reminders from BloomVision.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                        <Label htmlFor="enable-emails" className="font-semibold">Enable Daily Emails</Label>
-                        <p className="text-xs text-muted-foreground">Master switch for all email notifications.</p>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-4">
+                        <Mail className="h-6 w-6 text-primary" />
+                        <CardTitle className="font-headline">Email Notification Settings</CardTitle>
                     </div>
-                    <Switch
-                        id="enable-emails"
-                        checked={enableEmails}
-                        onCheckedChange={setEnableEmails}
-                    />
-                </div>
-
-                <div className={cn("space-y-4", !enableEmails && "opacity-50 pointer-events-none")}>
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="plan-day-reminder">"Plan Your Day" Reminder (8am)</Label>
-                        <Switch
-                            id="plan-day-reminder"
-                            checked={planDayReminder}
-                            onCheckedChange={setPlanDayReminder}
-                        />
-                    </div>
-                     <Separator/>
-                     <div>
-                        <Label>Productivity Matrix Reminders</Label>
-                        <p className="text-xs text-muted-foreground mb-2">Set 3 times to get AI-categorized task lists.</p>
-                        <div className="grid grid-cols-3 gap-2">
-                            {productivityReminders.map((time, index) => (
-                                <Input 
-                                    key={index}
-                                    type="time" 
-                                    value={time}
-                                    onChange={(e) => handleTimeChange(index, e.target.value)}
-                                    className="text-xs"
-                                />
-                            ))}
+                    <CardDescription>Configure when you receive email reminders from BloomVision.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div>
+                            <Label htmlFor="enable-emails" className="font-semibold">Enable Daily Emails</Label>
+                            <p className="text-xs text-muted-foreground">Master switch for all email notifications.</p>
                         </div>
-                     </div>
-                     <Separator/>
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="habits-reminder">Important Habits Reminder</Label>
                         <Switch
-                            id="habits-reminder"
-                            checked={habitsReminder}
-                            onCheckedChange={setHabitsReminder}
+                            id="enable-emails"
+                            checked={enableEmails}
+                            onCheckedChange={setEnableEmails}
                         />
                     </div>
-                     <Separator/>
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="reflection-reminder">End-of-Day Reflection Reminder (8pm)</Label>
-                        <Switch
-                            id="reflection-reminder"
-                            checked={reflectionReminder}
-                            onCheckedChange={setReflectionReminder}
-                        />
+
+                    <div className={cn("space-y-4", !enableEmails && "opacity-50 pointer-events-none")}>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="plan-day-reminder">"Plan Your Day" Reminder (8am)</Label>
+                            <Switch
+                                id="plan-day-reminder"
+                                checked={planDayReminder}
+                                onCheckedChange={setPlanDayReminder}
+                            />
+                        </div>
+                        <Separator/>
+                        <div>
+                            <Label>Productivity Matrix Reminders</Label>
+                            <p className="text-xs text-muted-foreground mb-2">Set 3 times to get AI-categorized task lists.</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                {productivityReminders.map((time, index) => (
+                                    <Input 
+                                        key={index}
+                                        type="time" 
+                                        value={time}
+                                        onChange={(e) => handleTimeChange(index, e.target.value)}
+                                        className="text-xs"
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        <Separator/>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="habits-reminder">Important Habits Reminder</Label>
+                            <Switch
+                                id="habits-reminder"
+                                checked={habitsReminder}
+                                onCheckedChange={setHabitsReminder}
+                            />
+                        </div>
+                        <Separator/>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="reflection-reminder">End-of-Day Reflection Reminder (8pm)</Label>
+                            <Switch
+                                id="reflection-reminder"
+                                checked={reflectionReminder}
+                                onCheckedChange={setReflectionReminder}
+                            />
+                        </div>
                     </div>
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSaveSettings} className="ml-auto">
-                    <Save className="mr-2 h-4 w-4" /> Save Settings
-                </Button>
-            </CardFooter>
-        </Card>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSaveSettings} className="ml-auto">
+                        <Save className="mr-2 h-4 w-4" /> Save Settings
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className='font-headline'>Test Center</CardTitle>
+                    <CardDescription>Send a test notification to see how it looks.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className='flex items-center gap-4'>
+                        <Select onValueChange={(value: TestNotificationType) => setTestNotificationType(value)} defaultValue='generic'>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select notification type..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="generic">Generic Test</SelectItem>
+                                <SelectItem value="planDay">"Plan Your Day" Reminder</SelectItem>
+                                <SelectItem value="productivity">Productivity Matrix</SelectItem>
+                                <SelectItem value="habits">Habits Reminder</SelectItem>
+                                <SelectItem value="reflection">Reflection Reminder</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button onClick={handleSendTest}>
+                            <Send className="mr-2 h-4 w-4"/>
+                            Send Test
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );
