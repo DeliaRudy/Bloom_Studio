@@ -530,5 +530,3 @@ export function DailyPlanClient() {
     </div>
   );
 }
-
-    
