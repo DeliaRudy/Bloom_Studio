@@ -75,7 +75,7 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/dashboard" legacyBehavior passHref>
+              <Link href="/dashboard">
                 <SidebarMenuButton
                   isActive={pathname === "/dashboard"}
                   tooltip={{
@@ -102,7 +102,7 @@ export function SidebarNav() {
                             <SidebarMenu>
                                 {coreLinks.map((link) => (
                                     <SidebarMenuItem key={link.href}>
-                                    <Link href={link.href} legacyBehavior passHref>
+                                    <Link href={link.href}>
                                         <SidebarMenuButton
                                         isActive={pathname === link.href}
                                         tooltip={{
@@ -135,7 +135,7 @@ export function SidebarNav() {
                             <SidebarMenu>
                                 {plansLinks.map((link) => (
                                     <SidebarMenuItem key={link.href}>
-                                    <Link href={link.href} legacyBehavior passHref>
+                                    <Link href={link.href}>
                                         <SidebarMenuButton
                                         isActive={pathname === link.href}
                                         tooltip={{
@@ -155,7 +155,7 @@ export function SidebarNav() {
             </SidebarGroup>
 
              <SidebarMenuItem>
-              <Link href="/ai-reflection" legacyBehavior passHref>
+              <Link href="/ai-reflection">
                 <SidebarMenuButton
                   isActive={pathname === "/ai-reflection"}
                   tooltip={{
