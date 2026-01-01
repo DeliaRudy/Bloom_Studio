@@ -47,7 +47,7 @@ type DailyPlan = {
   habits: Record<string, boolean>;
 };
 
-const hours = Array.from({ length: 15 }, (_, i) => `${i + 6}:00`); // 6am to 8pm
+const hours = Array.from({ length: 15 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`); // 6am to 8pm
 
 export function DailyPlanClient() {
   const year2026 = new Date("2026-01-01T00:00:00");
