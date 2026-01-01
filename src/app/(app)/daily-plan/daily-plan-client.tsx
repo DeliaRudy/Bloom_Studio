@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { eachDayOfInterval, startOfYear, endOfYear, format, isToday, differenceInDays } from "date-fns";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 type Priority = {
   id: string;
@@ -33,9 +35,14 @@ type Priority = {
   completed: boolean;
 };
 
+type ScheduleItem = {
+    task: string;
+    priority: "High" | "Medium" | "Low";
+}
+
 type DailyPlan = {
   priorities: Priority[];
-  schedule: Record<string, string>;
+  schedule: Record<string, ScheduleItem>;
   reflection: string;
   habits: Record<string, boolean>;
 };
@@ -105,7 +112,7 @@ export function DailyPlanClient() {
         { id: "2", text: "", completed: false },
         { id: "3", text: "", completed: false },
       ],
-      schedule: hours.reduce((acc, hour) => ({...acc, [hour]: ''}), {}),
+      schedule: hours.reduce((acc, hour) => ({...acc, [hour]: { task: '', priority: 'Medium' }}), {}),
       reflection: "",
       habits: dailyHabits.reduce((acc, habit) => ({...acc, [habit]: false}), {}),
     };
@@ -131,9 +138,9 @@ export function DailyPlanClient() {
     updatePlanForDay(date, { priorities: newPriorities });
   }
 
-  const handleScheduleChange = (date: Date, hour: string, value: string) => {
+  const handleScheduleChange = (date: Date, hour: string, field: 'task' | 'priority', value: string) => {
       const plan = getPlanForDay(date);
-      const newSchedule = {...plan.schedule, [hour]: value};
+      const newSchedule = {...plan.schedule, [hour]: { ...plan.schedule[hour], [field]: value}};
       updatePlanForDay(date, { schedule: newSchedule });
   }
 
@@ -211,15 +218,44 @@ export function DailyPlanClient() {
                     <div className="lg:col-span-2 space-y-6">
                          <Card>
                             <CardHeader>
-                                <CardTitle>Schedule</CardTitle>
+                                <CardTitle className="text-pink-500 font-headline">Schedule for the Day</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                {hours.map(hour => (
-                                    <div key={hour} className="flex items-center gap-4">
-                                        <Label className="w-16 text-sm text-muted-foreground">{hour}</Label>
-                                        <Input value={plan.schedule[hour] || ''} onChange={e => handleScheduleChange(day, hour, e.target.value)} placeholder="What's the plan?" />
-                                    </div>
-                                ))}
+                                <div className="grid grid-cols-[1fr_2fr_1fr] gap-x-4 px-4 py-2">
+                                    <Label className="font-semibold">Time</Label>
+                                    <Label className="font-semibold">Task</Label>
+                                    <Label className="font-semibold">Priority</Label>
+                                </div>
+                                <Separator />
+                                {hours.map(hour => {
+                                    const time = new Date(`1970-01-01T${hour}:00`);
+                                    return (
+                                        <div key={hour}>
+                                            <div className="grid grid-cols-[1fr_2fr_1fr] items-center gap-x-4 px-4 py-2">
+                                                <Label className="font-semibold text-pink-500">{format(time, "h:mm a")}</Label>
+                                                <Input 
+                                                    value={plan.schedule[hour]?.task || ''} 
+                                                    onChange={e => handleScheduleChange(day, hour, 'task', e.target.value)} 
+                                                    placeholder="Task/Activity" 
+                                                />
+                                                <Select
+                                                    value={plan.schedule[hour]?.priority || 'Medium'}
+                                                    onValueChange={(value: "High" | "Medium" | "Low") => handleScheduleChange(day, hour, 'priority', value)}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="High">High</SelectItem>
+                                                        <SelectItem value="Medium">Medium</SelectItem>
+                                                        <SelectItem value="Low">Low</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <Separator />
+                                        </div>
+                                    );
+                                })}
                             </CardContent>
                         </Card>
                          <Card>
