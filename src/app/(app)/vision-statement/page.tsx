@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/ui/datepicker"
 import { useToast } from "@/hooks/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function VisionStatementPage() {
   const [dream, setDream] = React.useState("")
@@ -51,7 +51,9 @@ export default function VisionStatementPage() {
                 <Badge variant="secondary" className="px-3 py-1 text-sm">STEP 3</Badge>
                 <CardTitle className="font-headline">Craft Your Statement</CardTitle>
             </div>
-          <CardDescription>Fill in the blanks to create your personal vision statement.</CardDescription>
+            <CardDescription>
+                Choose 1 big goal to achieve in the next 12 months which is the first big milestone on your journey to achieving your 5 year vision, lifetime goals and realising your ambition. This goal must be measurable.
+            </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="p-4 bg-muted/50 rounded-lg">
@@ -73,18 +75,18 @@ export default function VisionStatementPage() {
           </div>
           <div className="space-y-2 pt-4">
             <Label htmlFor="12-month-goal">My One Measurable 12-Month Goal</Label>
-            <Select onValueChange={setGoal} value={goal}>
-                <SelectTrigger id="12-month-goal">
-                    <SelectValue placeholder="Choose one goal to focus on..." />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="Launch my side business">Launch my side business</SelectItem>
-                    <SelectItem value="Run a half-marathon">Run a half-marathon</SelectItem>
-                    <SelectItem value="Read 50 books">Read 50 books</SelectItem>
-                    <SelectItem value="Save my first $10,000">Save my first $10,000</SelectItem>
-                    <SelectItem value="Learn a new programming language">Learn a new programming language</SelectItem>
-                </SelectContent>
-            </Select>
+            <Textarea
+              id="12-month-goal"
+              placeholder="e.g., Launch my side business and generate $10,000 in revenue."
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              className="resize-none h-32 leading-loose bg-transparent"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(to bottom, hsl(var(--border)) 0 1px, transparent 1px 2rem)',
+                lineHeight: '2rem',
+                backgroundAttachment: 'local'
+              }}
+            />
             <p className="text-sm text-muted-foreground">This will be your north star for the next year.</p>
           </div>
         </CardContent>
