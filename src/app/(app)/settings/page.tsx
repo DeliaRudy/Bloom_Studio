@@ -14,7 +14,7 @@ import { updateProfile } from 'firebase/auth';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sparkles, Palette } from 'lucide-react';
-import { generateAvatar as generateAvatarAction } from './actions';
+import { generateAvatarAction } from './actions';
 import { useTheme } from '@/components/theme-provider';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
