@@ -16,11 +16,13 @@ import {
 export function DatePicker({
     date,
     setDate,
-    className
+    className,
+    captionLayout
 } : {
     date?: Date,
     setDate: (date?: Date) => void,
     className?: string
+    captionLayout?: "buttons" | "dropdown" | "dropdown-buttons"
 }) {
 
   return (
@@ -44,6 +46,9 @@ export function DatePicker({
           selected={date}
           onSelect={(d) => setDate(d)}
           initialFocus
+          captionLayout={captionLayout}
+          fromYear={1960}
+          toYear={new Date().getFullYear()}
         />
       </PopoverContent>
     </Popover>

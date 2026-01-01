@@ -84,7 +84,12 @@ export default function LifeVisionPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                 <div className="space-y-2">
                     <Label htmlFor="dob">Your Date of Birth</Label>
-                    <DatePicker date={dateOfBirth} setDate={setDateOfBirth} className="w-full" />
+                    <DatePicker 
+                        date={dateOfBirth} 
+                        setDate={setDateOfBirth} 
+                        className="w-full"
+                        captionLayout="dropdown-buttons"
+                    />
                 </div>
                  <div className="space-y-2">
                     <Label>Date in 5 Years</Label>
