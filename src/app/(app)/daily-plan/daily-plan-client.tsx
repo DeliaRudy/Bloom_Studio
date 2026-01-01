@@ -55,10 +55,10 @@ type DailyPlan = {
 const hours = Array.from({ length: 15 }, (_, i) => `${(i + 6).toString().padStart(2, '0')}:00`); // 6am to 8pm
 
 export function DailyPlanClient() {
-  const year2026 = new Date("2026-01-01T00:00:00");
-  const daysOf2026 = eachDayOfInterval({
-    start: startOfYear(year2026),
-    end: endOfYear(year2026),
+  const currentYear = new Date();
+  const daysOfYear = eachDayOfInterval({
+    start: startOfYear(currentYear),
+    end: endOfYear(currentYear),
   });
 
   const [api, setApi] = React.useState<CarouselApi>();
@@ -74,7 +74,7 @@ export function DailyPlanClient() {
   
   React.useEffect(() => {
     // Load data from local storage
-    const savedPlans = localStorage.getItem("dailyPlans2026");
+    const savedPlans = localStorage.getItem(`dailyPlans${currentYear.getFullYear()}`);
     if (savedPlans) {
       setDailyPlans(JSON.parse(savedPlans));
     }
@@ -94,8 +94,8 @@ export function DailyPlanClient() {
 
     const today = new Date();
     let initialSlide = 0;
-    if (today.getFullYear() === 2026) {
-        initialSlide = differenceInDays(today, startOfYear(year2026));
+    if (today.getFullYear() === currentYear.getFullYear()) {
+        initialSlide = differenceInDays(today, startOfYear(currentYear));
     }
 
     api.scrollTo(initialSlide, true);
@@ -105,7 +105,7 @@ export function DailyPlanClient() {
     const onSelect = () => {
       const selectedIndex = api.selectedScrollSnap();
       setCurrent(selectedIndex);
-      const selectedDate = daysOf2026[selectedIndex];
+      const selectedDate = daysOfYear[selectedIndex];
       
       const monthIndex = getMonth(selectedDate);
       const monthlyGoals = JSON.parse(localStorage.getItem("monthlyGoals") || "[]");
@@ -122,7 +122,7 @@ export function DailyPlanClient() {
       api.off("select", onSelect);
     };
 
-  }, [api]);
+  }, [api, currentYear, daysOfYear]);
   
   const getPlanForDay = (date: Date): DailyPlan => {
     const dateString = format(date, "yyyy-MM-dd");
@@ -150,10 +150,10 @@ export function DailyPlanClient() {
   };
 
   const handleSave = () => {
-    localStorage.setItem("dailyPlans2026", JSON.stringify(dailyPlans));
+    localStorage.setItem(`dailyPlans${currentYear.getFullYear()}`, JSON.stringify(dailyPlans));
     toast({
       title: "Daily Plans Saved!",
-      description: "Your plans for 2026 have been saved locally.",
+      description: `Your plans for ${currentYear.getFullYear()} have been saved locally.`,
     });
   };
 
@@ -187,21 +187,21 @@ export function DailyPlanClient() {
 
   const handleGoToToday = () => {
     const today = new Date();
-    if (today.getFullYear() !== 2026) {
+    if (today.getFullYear() !== currentYear.getFullYear()) {
         toast({
             title: "Outside Range",
-            description: "Today's date is not in 2026.",
+            description: `Today's date is not in ${currentYear.getFullYear()}.`,
             variant: "destructive"
         })
         return;
     }
-    const todayIndex = differenceInDays(today, startOfYear(year2026));
+    const todayIndex = differenceInDays(today, startOfYear(currentYear));
     if (api) {
         api.scrollTo(todayIndex);
     }
   }
   
-  const currentDay = daysOf2026[current];
+  const currentDay = daysOfYear[current];
   const planForCurrentDay = getPlanForDay(currentDay);
 
   return (
@@ -284,7 +284,7 @@ export function DailyPlanClient() {
              <Button onClick={handleSave}>Save All Plans</Button>
         </div>
         <CarouselContent>
-          {daysOf2026.map((day, index) => {
+          {daysOfYear.map((day, index) => {
             const plan = getPlanForDay(day);
             const completedHabits = Object.values(plan.habits).filter(Boolean).length;
             const totalHabits = dailyHabits.length;
