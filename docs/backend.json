@@ -175,8 +175,7 @@
       "required": [
         "id",
         "sessionID",
-        "itemText",
-        "isCompleted"
+        "itemText"
       ]
     },
     "VisionStatement": {
@@ -230,6 +229,9 @@
         "caption": {
           "type": "string",
           "description": "Optional caption for the image."
+        },
+        "imageHint": {
+          "type": "string"
         }
       },
       "required": [
@@ -302,8 +304,10 @@
         },
         "tag": {
           "type": "string",
-          "description": "Tag for the pin (e.g., 'Vacation', 'Business')."
+          "enum": ["visited", "wishlist"]
         },
+        "city": { "type": "string" },
+        "country": { "type": "string" },
         "date": {
           "type": "string",
           "description": "Date associated with the pin.",
@@ -319,7 +323,9 @@
         "sessionID",
         "latitude",
         "longitude",
-        "tag"
+        "tag",
+        "city",
+        "country"
       ]
     },
     "JournalEntry": {
@@ -330,7 +336,7 @@
       "properties": {
         "id": { "type": "string" },
         "sessionID": { "type": "string" },
-        "entryType": { "type": "string", "enum": ["affirmation", "gratitude", "reason", "philosophy", "trait_word", "trait_meaning"] },
+        "entryType": { "type": "string", "enum": ["affirmation", "gratitude", "reason", "philosophy", "trait_word", "trait_meaning", "habit_start_focus", "habit_stop_focus"] },
         "text": { "type": "string" },
         "relatedId": { "type": "string", "description": "For trait_meaning, this links to the trait_word entry's ID."}
       },
@@ -421,7 +427,7 @@
       "properties": {
         "id": { "type": "string", "description": "ID in format YYYY-MM" },
         "sessionID": { "type": "string" },
-        "goals": { "type": "array", "items": { "type": "string" } },
+        "goals": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "completed": { "type": "boolean" } } } },
         "bigGoal": { "type": "string" }
       },
       "required": ["id", "sessionID"]
@@ -435,7 +441,7 @@
             "id": { "type": "string", "description": "ID in format YYYY-WW (e.g., 2024-28)" },
             "sessionID": { "type": "string" },
             "bigGoal": { "type": "string" },
-            "weeklyGoals": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "priority": { "type": "boolean" } } } },
+            "goals": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "priority": { "type": "boolean" } } } },
             "affirmations": { "type": "array", "items": { "type": "string" } },
             "peopleToConnect": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "connected": { "type": "boolean" } } } },
             "schedule": { "type": "object" }

@@ -11,7 +11,7 @@ import { Dumbbell, Brain, Briefcase, User, Users } from "lucide-react";
 import * as React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc, setDoc } from "firebase/firestore";
+import { collection, doc } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { CategoryGoal } from "@/lib/types";
 
@@ -50,7 +50,7 @@ export default function GoalsListPage() {
     const goalDocRef = doc(goalsCollection, category);
     setDocumentNonBlocking(goalDocRef, { 
         [type]: value,
-        category: category, // Ensure category is set
+        category: goalCategories.find(c => c.id === category)?.label,
         sessionID: 'default',
         id: category
     }, { merge: true });

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -22,6 +23,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { worldCities, type City } from "@/lib/world-cities";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
+import { TravelMapPin } from "@/lib/types";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const MultiSelectCombobox = ({
   options,
@@ -45,6 +50,7 @@ const MultiSelectCombobox = ({
     } else {
       onChange([...selected, city]);
     }
+    setOpen(false);
   };
 
   const handleRemove = (city: City) => {
@@ -118,8 +124,70 @@ const MultiSelectCombobox = ({
 
 
 export function TravelMapClient() {
-    const [visitedPlaces, setVisitedPlaces] = React.useState<City[]>([worldCities[2], worldCities[3]]);
-    const [wishlistPlaces, setWishlistPlaces] = React.useState<City[]>([worldCities[0], worldCities[4]]);
+    const { firestore, user } = useFirebase();
+
+    const pinsCollection = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, `users/${user.uid}/sessions/default/travelMapPins`);
+    }, [user, firestore]);
+
+    const { data: pinsData, isLoading } = useCollection<TravelMapPin>(pinsCollection);
+
+    const cityToPin = (city: City, tag: 'visited' | 'wishlist'): Omit<TravelMapPin, 'id' | 'sessionID'> => ({
+        latitude: city.lat,
+        longitude: city.lng,
+        tag: tag,
+        city: city.city,
+        country: city.country,
+    });
+    
+    const pinToCity = (pin: TravelMapPin): City => ({
+        city: pin.city,
+        country: pin.country,
+        lat: pin.latitude,
+        lng: pin.longitude,
+    });
+
+    const visitedPlaces = React.useMemo(() => pinsData?.filter(p => p.tag === 'visited').map(pinToCity) || [], [pinsData]);
+    const wishlistPlaces = React.useMemo(() => pinsData?.filter(p => p.tag === 'wishlist').map(pinToCity) || [], [pinsData]);
+
+    const handleVisitedChange = (cities: City[]) => {
+        if (!pinsCollection) return;
+        const currentPinCities = visitedPlaces.map(c => c.city);
+        const newPinCities = cities.map(c => c.city);
+
+        // Add new pins
+        cities.forEach(city => {
+            if(!currentPinCities.includes(city.city)) {
+                addDocumentNonBlocking(pinsCollection, cityToPin(city, 'visited'));
+            }
+        });
+        // Remove old pins
+        pinsData?.forEach(pin => {
+            if(pin.tag === 'visited' && !newPinCities.includes(pin.city)){
+                deleteDocumentNonBlocking(doc(pinsCollection, pin.id));
+            }
+        })
+    };
+    
+    const handleWishlistChange = (cities: City[]) => {
+         if (!pinsCollection) return;
+        const currentPinCities = wishlistPlaces.map(c => c.city);
+        const newPinCities = cities.map(c => c.city);
+
+        // Add new pins
+        cities.forEach(city => {
+            if(!currentPinCities.includes(city.city)) {
+                addDocumentNonBlocking(pinsCollection, cityToPin(city, 'wishlist'));
+            }
+        });
+        // Remove old pins
+        pinsData?.forEach(pin => {
+            if(pin.tag === 'wishlist' && !newPinCities.includes(pin.city)){
+                deleteDocumentNonBlocking(doc(pinsCollection, pin.id));
+            }
+        })
+    };
 
 
   return (
@@ -134,7 +202,7 @@ export function TravelMapClient() {
                     <MultiSelectCombobox
                         options={worldCities}
                         selected={visitedPlaces}
-                        onChange={setVisitedPlaces}
+                        onChange={handleVisitedChange}
                         placeholder="Select cities you've been to..."
                     />
                 </CardContent>
@@ -148,7 +216,7 @@ export function TravelMapClient() {
                     <MultiSelectCombobox
                         options={worldCities}
                         selected={wishlistPlaces}
-                        onChange={setWishlistPlaces}
+                        onChange={handleWishlistChange}
                         placeholder="Select cities for your wishlist..."
                     />
                 </CardContent>

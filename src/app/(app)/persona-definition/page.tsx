@@ -90,7 +90,7 @@ export default function PersonaDefinitionPage() {
         if (philosophyDoc) {
              const docRef = doc(journalCollection, philosophyDoc.id);
              updateDocumentNonBlocking(docRef, { text: value });
-        } else {
+        } else if (value.trim() !== "") {
             addDocumentNonBlocking(journalCollection, { text: value, entryType: 'philosophy', sessionID: 'default' });
         }
     }

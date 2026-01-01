@@ -105,4 +105,16 @@ export type VisionBoardImage = {
     imageHint: string;
 }
 
+export type TravelMapPin = {
+    id: string;
+    sessionID: string;
+    latitude: number;
+    longitude: number;
+    tag: 'visited' | 'wishlist';
+    city: string;
+    country: string;
+    date?: string; // Optional: when it was visited/added
+    photoUrl?: string; // Optional
+};
+
 // Add other types from backend.json here as needed

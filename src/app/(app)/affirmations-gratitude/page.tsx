@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { JournalEntry } from "@/lib/types";
 
 export default function AffirmationsGratitudePage() {
@@ -48,7 +48,11 @@ export default function AffirmationsGratitudePage() {
   const updateEntry = (id: string, text: string) => {
     if (!entriesCollection) return;
     const entryDoc = doc(entriesCollection, id);
-    updateDocumentNonBlocking(entryDoc, { text });
+    if (text.trim() === '') {
+        deleteDocumentNonBlocking(entryDoc);
+    } else {
+        updateDocumentNonBlocking(entryDoc, { text });
+    }
   };
 
   const removeEntry = (id: string) => {

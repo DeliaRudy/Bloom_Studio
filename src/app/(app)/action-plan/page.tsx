@@ -17,16 +17,13 @@ import { Trash2, PlusCircle } from 'lucide-react';
 import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { useAuth, useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import {
   collection,
   doc,
-  addDoc,
-  deleteDoc,
-  updateDoc,
 } from 'firebase/firestore';
 import { ActionPlanItem } from '@/lib/types';
-import { setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function ActionPlanPage() {
   const { firestore, user } = useFirebase();
