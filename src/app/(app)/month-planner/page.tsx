@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { VisionStatement, MonthlyGoal, JournalEntry } from '@/lib/types';
+import { VisionStatement, MonthlyGoal, JournalEntry, HabitToManage } from '@/lib/types';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
@@ -74,13 +74,18 @@ export default function MonthPlannerPage() {
     monthlyGoalsData?.map(g => g.bigGoal).filter(g => g && g.trim() !== '') || []
   , [monthlyGoalsData]);
   
+  const habitsToManageCollectionRef = useMemoFirebase(() => 
+    user ? collection(firestore, `users/${user.uid}/sessions/default/habitsToManage`) : null
+  , [user, firestore]);
+  const { data: habitsToManageData } = useCollection<HabitToManage>(habitsToManageCollectionRef);
+
   const journalEntriesCollectionRef = useMemoFirebase(() => 
     user ? collection(firestore, `users/${user.uid}/sessions/default/journalEntries`) : null
   , [user, firestore]);
   const { data: journalEntries } = useCollection<JournalEntry>(journalEntriesCollectionRef);
   
-  const startHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_start_focus').map(e => e.text) || [], [journalEntries]);
-  const stopHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_stop_focus').map(e => e.text) || [], [journalEntries]);
+  const startHabits = React.useMemo(() => habitsToManageData?.filter(e => e.type === 'start').map(e => e.text) || [], [habitsToManageData]);
+  const stopHabits = React.useMemo(() => habitsToManageData?.filter(e => e.type === 'stop').map(e => e.text) || [], [habitsToManageData]);
   const lifeRules = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'reason').map(e => e.text) || [], [journalEntries]);
 
   // UI state for selections
@@ -426,5 +431,3 @@ export default function MonthPlannerPage() {
     </div>
   );
 }
-
-    

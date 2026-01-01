@@ -65,7 +65,7 @@ export function DailyPlanClient() {
       user ? collection(firestore, `users/${user.uid}/sessions/default/dailyHabits`) : null
   , [user, firestore]);
   const { data: dailyHabitsData, isLoading: areHabitsLoading } = useCollection<DailyHabit>(dailyHabitsCollectionRef);
-  const dailyHabits = React.useMemo(() => dailyHabitsData?.sort((a,b) => a.order - b.order).map(h => h.text).filter(h => h) || [], [dailyHabitsData]);
+  const dailyHabits = React.useMemo(() => dailyHabitsData?.sort((a,b) => a.order - b.order) || [], [dailyHabitsData]);
 
   const fiveYearVisionDocRef = useMemoFirebase(() => 
       user ? doc(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`, 'visionStatement') : null
@@ -112,7 +112,7 @@ export function DailyPlanClient() {
         reflection: '',
         gratitude: '',
         habits: dailyHabits.reduce(
-          (acc, habit) => ({ ...acc, [habit]: false }),
+          (acc, habit) => ({ ...acc, [habit.text]: false }),
           {}
         ),
         todaysBigGoal: '',
@@ -124,7 +124,7 @@ export function DailyPlanClient() {
 
   const updatePlanForDay = (newPlan: Partial<DailyPlan>) => {
       if (!dailyPlanDocRef) return;
-      setDocumentNonBlocking(dailyPlanDocRef, newPlan, { merge: true });
+      setDocumentNonBlocking(dailyPlanDocRef, { ...newPlan, id: dateString, sessionID: 'default' }, { merge: true });
   };
 
   const handleSave = () => {
@@ -167,8 +167,8 @@ export function DailyPlanClient() {
     updatePlanForDay({ [field]: value });
   };
 
-  const handleHabitToggle = (habit: string) => {
-    const newHabits = { ...currentPlan.habits, [habit]: !currentPlan.habits[habit] };
+  const handleHabitToggle = (habitText: string) => {
+    const newHabits = { ...currentPlan.habits, [habitText]: !currentPlan.habits[habitText] };
     updatePlanForDay({ habits: newHabits });
   };
 
@@ -357,19 +357,19 @@ export function DailyPlanClient() {
                 <div className="space-y-2">
                   {dailyHabits.map((habit) => (
                     <div
-                      key={habit}
+                      key={habit.id}
                       className="flex items-center gap-3 cursor-pointer rounded-md p-2 hover:bg-muted/50"
-                      onClick={() => handleHabitToggle(habit)}
+                      onClick={() => handleHabitToggle(habit.text)}
                     >
-                      <Checkbox checked={currentPlan.habits[habit]} />
+                      <Checkbox checked={currentPlan.habits[habit.text]} />
                       <span
                         className={cn(
                           'text-sm',
-                          currentPlan.habits[habit] &&
+                          currentPlan.habits[habit.text] &&
                             'line-through text-muted-foreground'
                         )}
                       >
-                        {habit}
+                        {habit.text}
                       </span>
                     </div>
                   ))}

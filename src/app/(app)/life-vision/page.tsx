@@ -18,7 +18,7 @@ import * as React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { addYears, differenceInYears, parse } from 'date-fns';
-import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirebase, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, updateDoc, addDoc } from "firebase/firestore";
 import { setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
@@ -50,9 +50,6 @@ type FiveYearVisionPrompt = {
 
 export default function LifeVisionPage() {
   const { firestore, user } = useFirebase();
-  const [dateOfBirth, setDateOfBirth] = React.useState<string>("");
-  const [visionStatementDream, setVisionStatementDream] = React.useState("");
-  const [visionStatementAmount, setVisionStatementAmount] = React.useState("");
 
   const { toast } = useToast();
 
@@ -65,6 +62,25 @@ export default function LifeVisionPage() {
     if (!user) return null;
     return collection(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`);
   }, [firestore, user]);
+  
+  const visionStatementDocRef = useMemoFirebase(() => {
+      if(!user) return null;
+      return doc(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`, 'visionStatement');
+  }, [user, firestore]);
+  
+  const { data: visionStatementData } = useDoc<any>(visionStatementDocRef);
+
+  const [dateOfBirth, setDateOfBirth] = React.useState<string>("");
+  const [visionStatementDream, setVisionStatementDream] = React.useState(visionStatementData?.dream || "");
+  const [visionStatementAmount, setVisionStatementAmount] = React.useState(visionStatementData?.amount || "");
+
+  React.useEffect(() => {
+      if (visionStatementData) {
+          setVisionStatementDream(visionStatementData.dream || "");
+          setVisionStatementAmount(visionStatementData.amount || "");
+      }
+  }, [visionStatementData]);
+
 
   const { data: decadeMilestones } = useCollection<LifeVisionMilestone>(lifeVisionMilestonesCollection);
   const { data: fiveYearPromptsData } = useCollection<FiveYearVisionPrompt>(fiveYearVisionPromptsCollection);
@@ -103,9 +119,23 @@ export default function LifeVisionPage() {
         const docRef = doc(fiveYearVisionPromptsCollection, existing.id);
         updateDoc(docRef, { responseText });
     } else {
-        addDocumentNonBlocking(fiveYearVisionPromptsCollection, { promptKey, responseText, sessionID: 'default' });
+        addDocumentNonBlocking(fiveYearVisionPromptsCollection, { id: promptKey, promptKey, responseText, sessionID: 'default' });
     }
   };
+  
+  const handleVisionStatementChange = (dream: string, amount: string) => {
+      if (!visionStatementDocRef) return;
+      const fiveYearsFromNow = addYears(new Date(), 5);
+      const fullStatement = `I will ${dream || "[dream]"} and I will have made/invested $${amount || "[amount]"} by ${fiveYearsFromNow.toLocaleDateString()}.`;
+
+      setDocumentNonBlocking(visionStatementDocRef, {
+          dream,
+          amount,
+          responseText: fullStatement,
+          promptKey: 'visionStatement',
+          sessionID: 'default'
+      }, { merge: true });
+  }
 
 
   const handleSave = () => {
@@ -229,11 +259,17 @@ export default function LifeVisionPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
              <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="vision-dream">I will...</Label>
-                <Input id="vision-dream" placeholder="buy my dream house" value={visionStatementDream} onChange={e => setVisionStatementDream(e.target.value)} />
+                <Input id="vision-dream" placeholder="buy my dream house" value={visionStatementDream} onChange={e => {
+                    setVisionStatementDream(e.target.value);
+                    handleVisionStatementChange(e.target.value, visionStatementAmount);
+                }} />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="vision-amount">...and I will have made/invested ($)</Label>
-                <Input id="vision-amount" type="number" placeholder="50,000" value={visionStatementAmount} onChange={e => setVisionStatementAmount(e.target.value)} />
+                <Input id="vision-amount" type="number" placeholder="50,000" value={visionStatementAmount} onChange={e => {
+                    setVisionStatementAmount(e.target.value);
+                    handleVisionStatementChange(visionStatementDream, e.target.value);
+                }} />
             </div>
             <div className="space-y-2">
                 <Label>by...</Label>

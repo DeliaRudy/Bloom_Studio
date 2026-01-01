@@ -46,7 +46,7 @@ import { CycleSyncBanner } from '@/components/cycle-sync-banner';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { VisionStatement, MonthlyGoal, JournalEntry, WeeklyPlan } from '@/lib/types';
+import { VisionStatement, MonthlyGoal, JournalEntry, WeeklyPlan, HabitToManage } from '@/lib/types';
 
 
 type WeeklyGoal = {
@@ -88,14 +88,17 @@ export default function WeekPlannerPage() {
   const journalEntriesCollectionRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/sessions/default/journalEntries`) : null, [user, firestore]);
   const { data: journalEntriesData } = useCollection<JournalEntry>(journalEntriesCollectionRef);
   const availableAffirmations = React.useMemo(() => journalEntriesData?.filter(e => e.entryType === 'affirmation') || [], [journalEntriesData]);
+  
+  const habitsToManageCollectionRef = useMemoFirebase(() => user ? collection(firestore, `users/${user.uid}/sessions/default/habitsToManage`) : null, [user, firestore]);
+  const { data: habitsToManageData } = useCollection<HabitToManage>(habitsToManageCollectionRef);
   const habits = React.useMemo(() => {
-     const startHabit = journalEntriesData?.find(e => e.entryType === 'habit_start_focus');
-     const stopHabit = journalEntriesData?.find(e => e.entryType === 'habit_stop_focus');
+     const startHabit = habitsToManageData?.find(e => e.type === 'start');
+     const stopHabit = habitsToManageData?.find(e => e.type === 'stop');
      let habitsText = '';
      if (startHabit) habitsText += `Start: ${startHabit.text}\n`;
      if (stopHabit) habitsText += `Stop: ${stopHabit.text}`;
      return habitsText.trim() || 'Not set yet';
-  }, [journalEntriesData]);
+  }, [habitsToManageData]);
 
   const weeklyPlanDocRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/sessions/default/weeklyPlans`, weekKey) : null, [user, firestore, weekKey]);
   const { data: currentPlan, isLoading } = useDoc<WeeklyPlan>(weeklyPlanDocRef);
