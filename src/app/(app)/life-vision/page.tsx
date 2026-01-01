@@ -42,6 +42,9 @@ export default function LifeVisionPage() {
     fiveYearPrompts.reduce((acc, prompt) => ({ ...acc, [prompt]: "" }), {})
   );
   const [dateOfBirth, setDateOfBirth] = React.useState<string>("");
+  const [visionStatementDream, setVisionStatementDream] = React.useState("");
+  const [visionStatementAmount, setVisionStatementAmount] = React.useState("");
+
   
   const { toast } = useToast();
   
@@ -65,6 +68,9 @@ export default function LifeVisionPage() {
     (dateOfBirth ? 1 : 0);
   const totalCount = decadeMilestones.length + fiveYearPrompts.length + 1;
   const progress = (filledCount / totalCount) * 100;
+
+  const visionStatementPreview = `I will ${visionStatementDream || "[dream]"} and I will have made/invested $${visionStatementAmount || "[amount]"} by ${fiveYearsFromNow.toLocaleDateString()}.`
+
 
   return (
     <div>
@@ -103,6 +109,32 @@ export default function LifeVisionPage() {
                     <Input value={ageInFiveYears !== null ? ageInFiveYears : "Enter DOB"} readOnly disabled />
                 </div>
             </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="font-headline">5-Year Vision Statement</CardTitle>
+          <CardDescription>Craft a powerful, concise statement for your five-year goal.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <div className="p-4 bg-muted/50 rounded-lg mb-6">
+            <p className="text-lg italic text-center text-foreground/80">{visionStatementPreview}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+             <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="vision-dream">I will...</Label>
+                <Input id="vision-dream" placeholder="buy my dream house" value={visionStatementDream} onChange={e => setVisionStatementDream(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="vision-amount">...and I will have made/invested ($)</Label>
+                <Input id="vision-amount" type="number" placeholder="50,000" value={visionStatementAmount} onChange={e => setVisionStatementAmount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label>by...</Label>
+                <Input value={fiveYearsFromNow.toLocaleDateString()} readOnly disabled />
+            </div>
+          </div>
         </CardContent>
       </Card>
       
