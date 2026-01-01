@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { format, addDays, startOfWeek, getMonth } from "date-fns";
+import { format, addDays, startOfWeek, getMonth, addWeeks, subWeeks } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -218,10 +218,21 @@ export default function WeekPlannerPage() {
 
   return (
     <div>
-      <PageHeader
-        title={`Weekly Plan - Week ${format(week, "w")}`}
-        description={`Begin with Focus. ${format(weekStart, "MMMM d")} - ${format(addDays(weekStart, 6), "MMMM d, yyyy")}`}
-      />
+      <div className="flex justify-between items-center mb-4">
+        <PageHeader
+            title={`Weekly Plan - Week ${format(week, "w")}`}
+            description={`Begin with Focus. ${format(weekStart, "MMMM d")} - ${format(addDays(weekStart, 6), "MMMM d, yyyy")}`}
+        />
+        <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => setWeek(subWeeks(week, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => setWeek(addWeeks(week, 1))}>
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => setWeek(new Date())}>This Week</Button>
+        </div>
+      </div>
 
       <Card className="mb-6">
         <CardHeader>
@@ -399,3 +410,5 @@ export default function WeekPlannerPage() {
     </div>
   );
 }
+
+    

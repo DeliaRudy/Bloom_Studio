@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, addMonths, subMonths } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type Goal = {
@@ -29,7 +29,7 @@ const initialGoals: Goal[] = [
 ];
 
 export default function MonthPlannerPage() {
-  const [currentMonth] = React.useState(new Date());
+  const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [bigGoal, setBigGoal] = React.useState("");
   const [fiveYearVision, setFiveYearVision] = React.useState("");
   const [monthlyGoals, setMonthlyGoals] = React.useState<string[]>([]);
@@ -147,10 +147,23 @@ export default function MonthPlannerPage() {
 
   return (
     <div>
-      <PageHeader
-        title={`Monthly Goals and Plans - ${format(currentMonth, "MMMM").toUpperCase()}`}
-        description="Here's your space to plan out your month in detail and track your progress."
-      />
+      <div className="flex justify-between items-center mb-4">
+        <PageHeader
+          title={`Monthly Goals and Plans`}
+          description="Here's your space to plan out your month in detail and track your progress."
+        />
+        <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <p className="text-lg font-semibold text-primary w-48 text-center">{format(currentMonth, "MMMM yyyy").toUpperCase()}</p>
+            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => setCurrentMonth(new Date())}>This Month</Button>
+        </div>
+      </div>
+
 
       <Card className="mb-6">
         <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -355,7 +368,5 @@ export default function MonthPlannerPage() {
     </div>
   );
 }
-
-    
 
     
