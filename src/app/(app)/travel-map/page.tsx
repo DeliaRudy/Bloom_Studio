@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
+import { TravelMapClient } from "./travel-map-client";
 
 export default function TravelMapPage() {
   return (
@@ -9,18 +8,7 @@ export default function TravelMapPage() {
         title="My Travel Map"
         description="Pin your past journeys and future adventures. Where in the world do you want to go?"
       />
-      <Card>
-        <CardContent className="p-0">
-            <div className="aspect-[16/9] relative">
-                <Image
-                    src="/transparent-world-map.png"
-                    alt="World map"
-                    fill
-                    className="object-contain"
-                />
-            </div>
-        </CardContent>
-      </Card>
+      <TravelMapClient />
     </div>
   );
 }
