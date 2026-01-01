@@ -7,6 +7,11 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import { usePathname } from "next/navigation"
 import { 
@@ -23,11 +28,15 @@ import {
   UserCircle,
   BookHeart,
   Repeat,
+  Heart,
+  DraftingCompass,
+  CalendarCheck,
+  CalendarHeart,
+  CalendarPlus
 } from "lucide-react"
 import Link from "next/link"
 
-const links = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+const coreLinks = [
   { href: "/define-success", label: "My Ambition", icon: Target },
   { href: "/life-vision", label: "Life Vision", icon: Calendar },
   { href: "/vision-statement", label: "My Big Goal", icon: Quote },
@@ -38,8 +47,13 @@ const links = [
   { href: "/persona-definition", label: "Persona Definition", icon: UserCircle },
   { href: "/affirmations-gratitude", label: "Affirmations & Gratitude", icon: BookHeart },
   { href: "/habits", label: "Habits", icon: Repeat },
-  { href: "/ai-reflection", label: "AI Reflection", icon: Sparkles },
 ];
+
+const plansLinks = [
+    { href: "/monthly-goals", label: "Monthly Goals", icon: CalendarCheck },
+    { href: "/month-map", label: "Month Map", icon: CalendarHeart },
+    { href: "/month-planner", label: "Month Planner", icon: CalendarPlus },
+]
 
 export function SidebarNav() {
   const pathname = usePathname()
@@ -54,21 +68,85 @@ export function SidebarNav() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {links.map((link) => (
-            <SidebarMenuItem key={link.href}>
-              <Link href={link.href} legacyBehavior passHref>
+            <SidebarMenuItem>
+              <Link href="/dashboard" legacyBehavior passHref>
                 <SidebarMenuButton
-                  isActive={pathname === link.href}
+                  isActive={pathname === "/dashboard"}
                   tooltip={{
-                    children: link.label,
+                    children: "Dashboard",
                   }}
                 >
-                  <link.icon className="h-5 w-5" />
-                  <span>{link.label}</span>
+                  <LayoutDashboard className="h-5 w-5" />
+                  <span>Dashboard</span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
-          ))}
+            
+            <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    My Core
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                     <SidebarMenu>
+                        {coreLinks.map((link) => (
+                            <SidebarMenuItem key={link.href}>
+                            <Link href={link.href} legacyBehavior passHref>
+                                <SidebarMenuButton
+                                isActive={pathname === link.href}
+                                tooltip={{
+                                    children: link.label,
+                                }}
+                                >
+                                <link.icon className="h-5 w-5" />
+                                <span>{link.label}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center gap-2">
+                    <DraftingCompass className="h-4 w-4" />
+                    My Plans
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                     <SidebarMenu>
+                        {plansLinks.map((link) => (
+                            <SidebarMenuItem key={link.href}>
+                            <Link href={link.href} legacyBehavior passHref>
+                                <SidebarMenuButton
+                                isActive={pathname === link.href}
+                                tooltip={{
+                                    children: link.label,
+                                }}
+                                >
+                                <link.icon className="h-5 w-5" />
+                                <span>{link.label}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarGroupContent>
+            </SidebarGroup>
+
+             <SidebarMenuItem>
+              <Link href="/ai-reflection" legacyBehavior passHref>
+                <SidebarMenuButton
+                  isActive={pathname === "/ai-reflection"}
+                  tooltip={{
+                    children: "AI Reflection",
+                  }}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  <span>AI Reflection</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
     </>

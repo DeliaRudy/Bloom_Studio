@@ -13,6 +13,9 @@ import {
   UserCircle,
   BookHeart,
   Repeat,
+  CalendarCheck,
+  CalendarHeart,
+  CalendarPlus,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -82,6 +85,24 @@ const features = [
     title: "Habits",
     description: "Define habits to start and stop.",
     icon: Repeat,
+  },
+  {
+    href: "/monthly-goals",
+    title: "Monthly Goals",
+    description: "Set and track your goals for the current month.",
+    icon: CalendarCheck,
+  },
+  {
+    href: "/month-map",
+    title: "Month Map",
+    description: "Visualize your month at a glance.",
+    icon: CalendarHeart,
+  },
+  {
+    href: "/month-planner",
+    title: "Month Planner",
+    description: "Plan your month in detail.",
+    icon: CalendarPlus,
   },
 ];
 
