@@ -1,20 +1,16 @@
-
 'use client';
 import * as React from 'react';
 import {
   format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  getDay,
+  startOfYear,
+  addDays,
   isSameDay,
-  isSameMonth,
-  addMonths,
-  subMonths,
-  isWithinInterval,
   parse,
-  parseISO,
-} from 'date-fns';
+  isValid,
+  getDate,
+  getMonth,
+  getYear,
+} from 'date-ns';
 import {
   Card,
   CardContent,
@@ -24,199 +20,261 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { PageHeader } from '@/components/page-header';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { predictCyclePhases, PredictCyclePhasesOutput } from '@/ai/flows/predict-cycle-phases';
-import { addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc, orderBy, query } from 'firebase/firestore';
-import { CycleDay, CycleNote } from '@/lib/types';
-import { Calendar, Droplets, PlusCircle, Sparkles, Trash2, X } from 'lucide-react';
-import { Label } from '@/components/ui/label';
+import {
+  setDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+  addDocumentNonBlocking,
+} from '@/firebase';
+import {
+  collection,
+  doc,
+  query,
+  where,
+  getDocs,
+  writeBatch,
+} from 'firebase/firestore';
+import { CycleDay, CycleSymptom } from '@/lib/types';
+import {
+  Calendar as CalendarIcon,
+  PlusCircle,
+  Trash2,
+  Heart,
+  X,
+} from 'lucide-react';
+import { DatePicker } from '@/components/ui/datepicker';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Check, ChevronsUpDown } from 'lucide-react';
 
 const flowLevels = ['none', 'light', 'medium', 'heavy'] as const;
-type FlowLevel = typeof flowLevels[number];
+type FlowLevel = (typeof flowLevels)[number];
 
-type Phase = 'menstruation' | 'follicular' | 'ovulation' | 'luteal';
-
-const phaseDetails = {
-  menstruation: {
-    title: "Menstruation Phase (Day 1-7)",
-    description: `If fertilization does not occur - vaginal bleeding/shedding of the uterine lining.
-
-- Low estrogen & progesterone
-- Lowest energy
-- Warm foods
-- Eat foods high in iron
-- Drink lots of water
-- Gentle walks in nature
-- Time for Self Care
-- Journal & reflect
-- Prioritise sleep
-- Be extra kind to yourself`,
-    color: "bg-[#f5c1cd] text-[#6d100f]",
-    textColor: "text-[#6d100f]",
+const flowStyles: Record<
+  FlowLevel,
+  { fill: string; stroke: string; label: string }
+> = {
+  none: {
+    fill: 'fill-white',
+    stroke: 'stroke-muted-foreground',
+    label: 'None',
   },
-  follicular: {
-    title: "Follicular Phase (Day 8-13)",
-    description: `Hormones released by your brain stimulate the production of an egg in your ovaries.
-
-- Rising estrogen & progesterone
-- Rising energy levels
-- Feeling refreshed
-- Light meals with fresh food
-- Eat raw fruit & veg
-- Eat fermented food, lean protein
-- CARDIO
-- Clear skin
-- Be creative
-- Breathwork`,
-    color: "bg-[#e7a8b3] text-[#6d100f]",
-    textColor: "text-[#6d100f]",
+  light: {
+    fill: 'fill-[#f5c1cd]',
+    stroke: 'stroke-[#d88fa3]',
+    label: 'Light',
   },
-  ovulation: {
-    title: "Ovulation Phase (Day 14-21)",
-    description: `The ovary releases a matured egg, which travels through the fallopian tubes to the uterus.
-
-- Estrogen & progesterone levels peak
-- High energy & brain power
-- Eat colourful fruits & veggies
-- Eat fibre & omega-3 foods
-- High impact workouts
-- High sex drive
-- Feeling confident
-- Take a risk & try new things
-- Be Social`,
-    color: "bg-[#d88fa3] text-white",
-    textColor: "text-[#d88fa3]",
+  medium: {
+    fill: 'fill-[#d88fa3]',
+    stroke: 'stroke-[#6d100f]',
+    label: 'Medium',
   },
-  luteal: {
-    title: "Luteal Phase (Day 22-28)",
-    description: `The Corpus luteum (ovarian cells) stays active or dies. Dependant on fertilization. Progesterone levels drop... (unless you get pregnant)
-
-- A significant drop in energy & productivity
-- Eat regular balanced meals
-- Eat complex carbs & fats
-- Reduce added sugars, caffeine & dairy
-- Do yoga & pilates
-- Be gentle to yourself
-- PMS - mood swings, sugar cravings, bloated
-- Take time to reflect & focus on simple things`,
-    color: "bg-[#c5768f] text-white",
-    textColor: "text-[#c5768f]",
+  heavy: {
+    fill: 'fill-[#6d100f]',
+    stroke: 'stroke-[#6d100f]',
+    label: 'Heavy',
   },
 };
 
-const CalendarGrid = ({
-  month,
+const allSymptoms = [
+  'Cramps',
+  'Acne',
+  'Moody',
+  'Sad',
+  'Happy',
+  'Energetic',
+  'Bloated',
+  'Headache',
+  'Fatigue',
+  'Cravings',
+];
+
+const months = Array.from({ length: 12 }, (_, i) =>
+  format(new Date(0, i), 'MMM')
+);
+const days = Array.from({ length: 31 }, (_, i) => i + 1);
+
+const YearlyCycleGrid = ({
   year,
   cycleData,
-  predictedPhases,
-  selectedDay,
   onDayClick,
 }: {
-  month: number;
   year: number;
   cycleData: Record<string, CycleDay>;
-  predictedPhases: PredictCyclePhasesOutput | null;
-  selectedDay: Date;
-  onDayClick: (day: Date) => void;
+  onDayClick: (date: Date, currentFlow: FlowLevel) => void;
 }) => {
-  const startDate = startOfMonth(new Date(year, month));
-  const endDate = endOfMonth(startDate);
-  const daysInMonth = eachDayOfInterval({ start: startDate, end: endDate });
-  const startingDayOfWeek = getDay(startDate) === 0 ? 6 : getDay(startDate) - 1; // Monday is 0
-
-  const getDayPhase = (day: Date): Phase | null => {
-    if (!predictedPhases) return null;
-    for (const phaseName in predictedPhases) {
-      const phase = predictedPhases[phaseName as Phase];
-      if (isWithinInterval(day, { start: parseISO(phase.startDate), end: parseISO(phase.endDate) })) {
-        return phaseName as Phase;
-      }
-    }
-    return null;
-  };
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-center font-headline text-lg">
-          {format(startDate, 'MMMM yyyy')}
+        <CardTitle className="text-center font-headline text-2xl">
+          PERIOD TRACKER - {year}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted-foreground">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day}>{day}</div>
+      <CardContent className="overflow-x-auto">
+        <div className="grid grid-cols-13 gap-1" style={{minWidth: '800px'}}>
+          {/* Header */}
+          <div /> {/* Empty corner */}
+          {months.map((month) => (
+            <div key={month} className="text-center font-bold text-sm">
+              {month.toUpperCase()}
+            </div>
           ))}
-        </div>
-        <div className="grid grid-cols-7 gap-1 mt-2">
-          {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-            <div key={`empty-${i}`} />
-          ))}
-          {daysInMonth.map((day) => {
-            const dateKey = format(day, 'yyyy-MM-dd');
-            const dayData = cycleData[dateKey];
-            const flow = dayData?.flow || 'none';
-            const phase = getDayPhase(day);
 
-            return (
-              <button
-                key={dateKey}
-                onClick={() => onDayClick(day)}
-                className={cn(
-                  'h-10 w-10 rounded-lg flex items-center justify-center transition-all duration-200 ease-in-out',
-                  'text-sm font-medium',
-                  !isSameMonth(day, startDate) && 'text-muted-foreground/50',
-                  isSameDay(day, new Date()) && 'border-2 border-primary',
-                  isSameDay(day, selectedDay) && 'ring-2 ring-primary ring-offset-2',
-                  flow !== 'none' && phaseDetails.menstruation.color,
-                  flow === 'none' && phase && phaseDetails[phase].color,
-                  flow === 'none' && !phase && 'hover:bg-muted'
-                )}
-              >
-                {format(day, 'd')}
-              </button>
-            );
-          })}
+          {/* Grid Body */}
+          {days.map((day) => (
+            <React.Fragment key={day}>
+              <div className="text-center font-bold text-sm pr-2">{day}</div>
+              {months.map((_, monthIndex) => {
+                const date = new Date(year, monthIndex, day);
+                if (date.getDate() !== day) {
+                  return <div key={monthIndex} />; // Invalid date (e.g., Feb 30)
+                }
+
+                const dateKey = format(date, 'yyyy-MM-dd');
+                const dayData = cycleData[dateKey];
+                const flow = dayData?.flow || 'none';
+
+                return (
+                  <div
+                    key={monthIndex}
+                    className="flex items-center justify-center"
+                  >
+                    <button onClick={() => onDayClick(date, flow)}>
+                      <Heart
+                        className={cn(
+                          'w-6 h-6 transition-all',
+                          flowStyles[flow].fill,
+                          flowStyles[flow].stroke
+                        )}
+                        strokeWidth={1.5}
+                      />
+                    </button>
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
         </div>
       </CardContent>
     </Card>
   );
 };
 
+const SymptomsCombobox = ({
+  selected,
+  onChange,
+  className,
+}: {
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  className?: string;
+}) => {
+  const [open, setOpen] = React.useState(false);
+
+  const handleSelect = (symptom: string) => {
+    onChange(
+      selected.includes(symptom)
+        ? selected.filter((s) => s !== symptom)
+        : [...selected, symptom]
+    );
+  };
+  const handleRemove = (symptom: string) => {
+    onChange(selected.filter((s) => s !== symptom));
+  };
+  return (
+    <div className={cn('space-y-2', className)}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between h-auto min-h-10"
+          >
+            <div className="flex flex-wrap gap-1">
+              {selected.length > 0 ? (
+                selected.map((item) => (
+                  <Badge
+                    variant="secondary"
+                    key={item}
+                    className="mr-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove(item);
+                    }}
+                  >
+                    {item} <X className="ml-1 h-3 w-3" />
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-muted-foreground">Select symptoms...</span>
+              )}
+            </div>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+          <Command>
+            <CommandInput placeholder="Search symptom..." />
+            <CommandEmpty>No symptoms found.</CommandEmpty>
+            <CommandList>
+              <CommandGroup>
+                {allSymptoms.map((symptom) => (
+                  <CommandItem
+                    key={symptom}
+                    onSelect={() => handleSelect(symptom)}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        selected.includes(symptom) ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {symptom}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
+
 export default function CycleTrackerPage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
-  
-  const [currentDate, setCurrentDate] = React.useState(new Date());
-  const [selectedDay, setSelectedDay] = React.useState(new Date());
-  const [newNote, setNewNote] = React.useState('');
-  
-  const [predictedPhases, setPredictedPhases] = React.useState<PredictCyclePhasesOutput | null>(null);
-  const [isPredicting, setIsPredicting] = React.useState(false);
+  const [currentYear, setCurrentYear] = React.useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
+    new Date()
+  );
+  const [note, setNote] = React.useState('');
 
-  const cycleCollection = useMemoFirebase(() => 
-    user ? collection(firestore, `users/${user.uid}/cycles`) : null
-  , [user, firestore]);
+  const dateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
 
-  const { data: cycleDocuments, isLoading } = useCollection<CycleDay>(cycleCollection);
-  
+  const cycleCollection = useMemoFirebase(
+    () => (user ? collection(firestore, `users/${user.uid}/cycles`) : null),
+    [user, firestore]
+  );
+  const { data: cycleDocuments, isLoading } =
+    useCollection<CycleDay>(cycleCollection);
+
   const cycleData = React.useMemo(() => {
     if (!cycleDocuments) return {};
     return cycleDocuments.reduce((acc, doc) => {
@@ -225,182 +283,112 @@ export default function CycleTrackerPage() {
     }, {} as Record<string, CycleDay>);
   }, [cycleDocuments]);
 
-  const selectedDayNotes = React.useMemo(() => {
-    const dateKey = format(selectedDay, 'yyyy-MM-dd');
-    return cycleData[dateKey]?.notes || [];
-  }, [selectedDay, cycleData]);
-
-
-  const getLatestPeriodStartDate = React.useCallback(() => {
-    const periodDays = Object.values(cycleData)
-      .filter(d => d.flow !== 'none')
-      .map(d => parseISO(d.id))
-      .sort((a, b) => b.getTime() - a.getTime());
-
-    if (periodDays.length === 0) return null;
-
-    let startDate = periodDays[0];
-    for (let i = 1; i < periodDays.length; i++) {
-        const diff = startDate.getDate() - periodDays[i].getDate();
-        if (diff > 1) {
-            break;
-        }
-        startDate = periodDays[i];
-    }
-    return startDate;
-  }, [cycleData]);
-
-  const handlePredictPhases = React.useCallback(async () => {
-    const lastPeriodStart = getLatestPeriodStartDate();
-    if (!lastPeriodStart) {
-      setPredictedPhases(null);
-      return;
-    }
-
-    setIsPredicting(true);
-    try {
-      const result = await predictCyclePhases({
-        lastPeriodStartDate: format(lastPeriodStart, 'yyyy-MM-dd'),
-      });
-      setPredictedPhases(result);
-    } catch (error) {
-      console.error("Error predicting phases:", error);
-      toast({ title: 'Prediction Failed', description: 'Could not predict cycle phases.', variant: 'destructive' });
-    } finally {
-      setIsPredicting(false);
-    }
-  }, [getLatestPeriodStartDate, toast]);
+  const selectedDayData = cycleData[dateKey];
+  const selectedSymptoms = selectedDayData?.symptoms || [];
 
   React.useEffect(() => {
-    handlePredictPhases();
-  }, [cycleData, handlePredictPhases]);
+    setNote(selectedDayData?.note || '');
+  }, [selectedDayData]);
 
-  const handleFlowChange = (flow: FlowLevel) => {
+  const handleDayClick = (date: Date, currentFlow: FlowLevel) => {
     if (!cycleCollection) return;
-    const dateKey = format(selectedDay, 'yyyy-MM-dd');
-    const dayDocRef = doc(cycleCollection, dateKey);
-    
-    setDocumentNonBlocking(dayDocRef, { flow, id: dateKey }, { merge: true });
 
+    const newFlowIndex = (flowLevels.indexOf(currentFlow) + 1) % flowLevels.length;
+    const newFlow = flowLevels[newFlowIndex];
+    const dateKey = format(date, 'yyyy-MM-dd');
+    const dayDocRef = doc(cycleCollection, dateKey);
+
+    setDocumentNonBlocking(dayDocRef, { flow: newFlow, id: dateKey }, { merge: true });
     toast({
       title: 'Flow Updated',
-      description: `Set flow to ${flow} for ${format(selectedDay, 'MMM d')}.`,
+      description: `Set flow to ${newFlow} for ${format(date, 'MMM d')}.`,
     });
   };
 
-  const handleAddNote = () => {
-    if (!newNote.trim() || !cycleCollection) return;
-    const dateKey = format(selectedDay, 'yyyy-MM-dd');
+  const handleNoteSave = () => {
+    if (!selectedDate || !cycleCollection) return;
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
     const dayDocRef = doc(cycleCollection, dateKey);
-    const notesCollectionRef = collection(dayDocRef, 'notes');
-
-    addDocumentNonBlocking(notesCollectionRef, {
-        text: newNote,
-        createdAt: new Date().toISOString(),
-    })
-    setNewNote('');
+    setDocumentNonBlocking(dayDocRef, { note: note }, { merge: true });
+    toast({
+      title: 'Note Saved',
+      description: `Your note for ${format(selectedDate, 'MMM d')} has been saved.`,
+    });
   };
-  
-  const handleRemoveNote = (noteId: string) => {
-      if (!cycleCollection || !user) return;
-      const dateKey = format(selectedDay, 'yyyy-MM-dd');
-      const noteDocRef = doc(firestore, `users/${user.uid}/cycles/${dateKey}/notes/${noteId}`);
-      deleteDocumentNonBlocking(noteDocRef);
-  }
 
-  const notesForSelectedDayQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    const dateKey = format(selectedDay, 'yyyy-MM-dd');
-    return query(collection(firestore, `users/${user.uid}/cycles/${dateKey}/notes`), orderBy('createdAt', 'desc'));
-  }, [user, firestore, selectedDay]);
-
-  const { data: notesForDay } = useCollection<CycleNote>(notesForSelectedDayQuery);
+  const handleSymptomChange = (newSymptoms: string[]) => {
+    if (!selectedDate || !cycleCollection) return;
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    const dayDocRef = doc(cycleCollection, dateKey);
+    setDocumentNonBlocking(dayDocRef, { symptoms: newSymptoms }, { merge: true });
+  };
 
   return (
     <div>
       <PageHeader
-        title="Cycle Syncing"
-        description="Align Your Productivity With Your Menstrual Cycle."
+        title="Cycle Tracker"
+        description="Track your menstrual cycle on a yearly basis. Click on a heart to log your flow."
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2">
-           <div className="flex justify-between items-center mb-6">
-                <Button variant="outline" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>Previous</Button>
-                <h2 className="text-2xl font-headline">{format(currentDate, 'MMMM yyyy')}</h2>
-                <Button variant="outline" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>Next</Button>
-            </div>
-          <CalendarGrid
-            month={currentDate.getMonth()}
-            year={currentDate.getFullYear()}
+          <YearlyCycleGrid
+            year={currentYear}
             cycleData={cycleData}
-            predictedPhases={predictedPhases}
-            selectedDay={selectedDay}
-            onDayClick={setSelectedDay}
+            onDayClick={handleDayClick}
           />
+           <div className="flex justify-between items-center mt-4">
+            <Button onClick={() => setCurrentYear(currentYear - 1)}>
+              Previous Year
+            </Button>
+            <Button onClick={() => setCurrentYear(currentYear + 1)}>
+              Next Year
+            </Button>
+          </div>
         </div>
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className='flex items-center gap-2'><Calendar className='w-5 h-5'/> Details for {format(selectedDay, 'MMMM d')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <Label className='font-semibold'>Menstrual Flow</Label>
-                        <Select onValueChange={handleFlowChange} value={cycleData[format(selectedDay, 'yyyy-MM-dd')]?.flow || 'none'}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select flow level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {flowLevels.map(level => (
-                                    <SelectItem key={level} value={level} className="capitalize">{level}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                     <div>
-                        <Label className='font-semibold'>Notes for this day</Label>
-                        <div className="flex items-center gap-2">
-                             <Textarea 
-                                placeholder='Add a note about symptoms, mood, etc.'
-                                value={newNote}
-                                onChange={e => setNewNote(e.target.value)}
-                                rows={1}
-                            />
-                            <Button size="icon" onClick={handleAddNote}><PlusCircle className='w-4 h-4'/></Button>
-                        </div>
-                        <div className="space-y-2 mt-4 max-h-32 overflow-y-auto">
-                            {notesForDay?.map(note => (
-                                <div key={note.id} className="flex justify-between items-start text-sm bg-muted/50 p-2 rounded-md">
-                                    <p className='flex-1 pr-2'>{note.text}</p>
-                                    <Button size="icon" variant="ghost" className='h-5 w-5' onClick={() => handleRemoveNote(note.id)}>
-                                        <X className='h-3 w-3' />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-        <div className="lg:col-span-3">
           <Card>
             <CardHeader>
-              <CardTitle className='flex items-center gap-2'><Droplets className='w-5 h-5'/> Phases Key</CardTitle>
-              <CardDescription>Learn about each phase of your cycle and how to work with your energy.</CardDescription>
+              <CardTitle>Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <DatePicker
+                  date={selectedDate}
+                  setDate={setSelectedDate}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Symptoms</h3>
+                <SymptomsCombobox
+                  selected={selectedSymptoms}
+                  onChange={handleSymptomChange}
+                />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Note</h3>
+                <Textarea
+                  placeholder="Add a note about symptoms, mood, etc."
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  onBlur={handleNoteSave}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Menstrual Flow</CardTitle>
             </CardHeader>
             <CardContent>
-              <Accordion type="single" collapsible className="w-full" defaultValue='menstruation'>
-                {Object.entries(phaseDetails).map(([key, value]) => (
-                  <AccordionItem value={key} key={key}>
-                    <AccordionTrigger className={cn("font-headline", value.textColor)}>
-                      {value.title}
-                    </AccordionTrigger>
-                    <AccordionContent className="prose prose-sm max-w-none text-foreground whitespace-pre-line">
-                      {value.description}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                <div className="space-y-2">
+                    {Object.entries(flowStyles).filter(([key]) => key !== 'none').map(([key, style]) => (
+                        <div key={key} className="flex items-center gap-3">
+                            <Heart className={cn('w-5 h-5', style.fill, style.stroke)} strokeWidth={1.5} />
+                            <span className="text-sm font-medium">{style.label}</span>
+                        </div>
+                    ))}
+                </div>
             </CardContent>
           </Card>
         </div>

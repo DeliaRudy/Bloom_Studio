@@ -361,6 +361,17 @@
           "type": "string",
           "description": "Level of menstrual flow for the day.",
           "enum": ["none", "light", "medium", "heavy"]
+        },
+        "note": {
+          "type": "string",
+          "description": "A note for the day."
+        },
+        "symptoms": {
+          "type": "array",
+          "description": "A list of symptoms for the day.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["id", "flow"]
@@ -697,5 +708,3 @@
     "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). User data is segregated under `/users/{userId}` for private data. Session data is nested under the user to maintain ownership and provide a clear hierarchical structure. All data related to a session, like success definitions, milestones, prompts, action plans, statements, images, goals, travel pins, and purpose reasons, are nested under `/users/{userId}/sessions/{sessionId}`. This structure facilitates easy management and secure access to user-specific data. Denormalization is not required here, as the hierarchical structure under the user inherently provides ownership and avoids the need for `get()` calls in security rules."
   }
 }
-
-    

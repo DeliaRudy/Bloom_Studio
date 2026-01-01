@@ -13,10 +13,16 @@ export type SuccessDefinition = {
     sessionID: string;
 };
 
+export type CycleSymptom = {
+  id: string;
+  name: string;
+};
+
 export type CycleDay = {
     id: string; // YYYY-MM-DD
     flow: 'none' | 'light' | 'medium' | 'heavy';
-    notes: CycleNote[];
+    note?: string;
+    symptoms?: string[];
 };
 
 export type CycleNote = {
