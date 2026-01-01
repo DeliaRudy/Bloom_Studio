@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import {
@@ -45,6 +46,7 @@ import { addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocki
 import { collection, doc, orderBy, query } from 'firebase/firestore';
 import { CycleDay, CycleNote } from '@/lib/types';
 import { Calendar, Droplets, PlusCircle, Sparkles, Trash2, X } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 const flowLevels = ['none', 'light', 'medium', 'heavy'] as const;
 type FlowLevel = typeof flowLevels[number];
@@ -365,3 +367,5 @@ export default function CycleTrackerPage() {
     </div>
   );
 }
+
+    
