@@ -1,27 +1,43 @@
 
-"use client";
+'use client';
 
-import * as React from "react";
-import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import * as React from 'react';
+import { PageHeader } from '@/components/page-header';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Target } from 'lucide-react';
 
 export default function MonthlyGoalsPage() {
-  const [bigGoal, setBigGoal] = React.useState("");
-  const [monthlyGoals, setMonthlyGoals] = React.useState<string[]>(Array(12).fill(""));
+  const [bigGoal, setBigGoal] = React.useState('');
+  const [monthlyGoals, setMonthlyGoals] = React.useState<string[]>(
+    Array(12).fill('')
+  );
   const { toast } = useToast();
 
   React.useEffect(() => {
-    const savedBigGoal = localStorage.getItem("bigGoal");
+    const savedBigGoal = localStorage.getItem('bigGoal');
     if (savedBigGoal) {
       setBigGoal(savedBigGoal);
     }
-    const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
+    const savedMonthlyGoals = localStorage.getItem('monthlyGoals');
     if (savedMonthlyGoals) {
-      setMonthlyGoals(JSON.parse(savedMonthlyGoals));
+      const parsedGoals = JSON.parse(savedMonthlyGoals);
+      if (Array.isArray(parsedGoals)) {
+        const fullList = Array(12).fill('');
+        parsedGoals.forEach((g, i) => {
+          if (i < 12) fullList[i] = g;
+        });
+        setMonthlyGoals(fullList);
+      }
     }
   }, []);
 
@@ -32,13 +48,18 @@ export default function MonthlyGoalsPage() {
   };
 
   const handleSave = () => {
-    localStorage.setItem("monthlyGoals", JSON.stringify(monthlyGoals));
-    console.log("Saving Monthly Goals:", monthlyGoals);
+    localStorage.setItem('monthlyGoals', JSON.stringify(monthlyGoals));
+    console.log('Saving Monthly Goals:', monthlyGoals);
     toast({
-      title: "Monthly Goals Saved",
-      description: "Your goals for the year have been updated.",
+      title: 'Monthly Goals Saved',
+      description: 'Your goals for the year have been updated.',
     });
   };
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   return (
     <div>
@@ -48,15 +69,18 @@ export default function MonthlyGoalsPage() {
       />
 
       {bigGoal && (
-        <Card className="mb-8 bg-amber-50 border-amber-200">
+        <Card className="mb-8 bg-primary/5 border-primary/20">
           <CardHeader>
-            <CardTitle className="font-headline text-amber-900">Your 12-Month "Big Goal"</CardTitle>
-            <CardDescription className="text-amber-800">
-              This is your north star. Your monthly goals should be stepping stones to achieve this.
+            <CardTitle className="font-headline text-primary flex items-center gap-2">
+              <Target /> Your 12-Month "Big Goal"
+            </CardTitle>
+            <CardDescription>
+              This is your north star. Your monthly goals should be stepping
+              stones to achieve this.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-semibold text-amber-900">{bigGoal}</p>
+            <p className="text-lg font-semibold text-foreground">{bigGoal}</p>
           </CardContent>
         </Card>
       )}
@@ -68,16 +92,16 @@ export default function MonthlyGoalsPage() {
             What do you need to achieve each month to hit your big goal?
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {monthlyGoals.map((goal, index) => (
             <div key={index} className="grid grid-cols-[auto_1fr] items-center gap-4">
-              <Label htmlFor={`month-${index + 1}`} className="font-bold text-lg text-muted-foreground">
-                {index + 1}
+              <Label htmlFor={`month-${index + 1}`} className="font-bold text-muted-foreground w-24">
+                {months[index]}
               </Label>
               <Input
                 id={`month-${index + 1}`}
                 type="text"
-                placeholder={`Goal for month ${index + 1}...`}
+                placeholder={`Goal for ${months[index]}...`}
                 value={goal}
                 onChange={(e) => handleGoalChange(index, e.target.value)}
               />
@@ -94,3 +118,5 @@ export default function MonthlyGoalsPage() {
     </div>
   );
 }
+
+    
