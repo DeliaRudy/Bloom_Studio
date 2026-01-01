@@ -38,6 +38,7 @@ type Priority = {
 type ScheduleItem = {
     task: string;
     priority: "High" | "Medium" | "Low";
+    notes: string;
 }
 
 type DailyPlan = {
@@ -112,7 +113,7 @@ export function DailyPlanClient() {
         { id: "2", text: "", completed: false },
         { id: "3", text: "", completed: false },
       ],
-      schedule: hours.reduce((acc, hour) => ({...acc, [hour]: { task: '', priority: 'Medium' }}), {}),
+      schedule: hours.reduce((acc, hour) => ({...acc, [hour]: { task: '', priority: 'Medium', notes: '' }}), {}),
       reflection: "",
       habits: dailyHabits.reduce((acc, habit) => ({...acc, [habit]: false}), {}),
     };
@@ -138,7 +139,7 @@ export function DailyPlanClient() {
     updatePlanForDay(date, { priorities: newPriorities });
   }
 
-  const handleScheduleChange = (date: Date, hour: string, field: 'task' | 'priority', value: string) => {
+  const handleScheduleChange = (date: Date, hour: string, field: 'task' | 'priority' | 'notes', value: string) => {
       const plan = getPlanForDay(date);
       const newSchedule = {...plan.schedule, [hour]: { ...plan.schedule[hour], [field]: value}};
       updatePlanForDay(date, { schedule: newSchedule });
@@ -221,22 +222,28 @@ export function DailyPlanClient() {
                                 <CardTitle className="text-pink-500 font-headline">Schedule for the Day</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <div className="grid grid-cols-[1fr_2fr_1fr] gap-x-4 px-4 py-2">
+                                <div className="grid grid-cols-[auto_1.5fr_1.5fr_1fr] gap-x-2 px-4 py-2">
                                     <Label className="font-semibold">Time</Label>
                                     <Label className="font-semibold">Task</Label>
+                                    <Label className="font-semibold">Notes</Label>
                                     <Label className="font-semibold">Priority</Label>
                                 </div>
                                 <Separator />
                                 {hours.map(hour => {
-                                    const time = new Date(`1970-01-01T${hour}:00`);
+                                    const time = new Date(`1970-01-01T${hour}`);
                                     return (
                                         <div key={hour}>
-                                            <div className="grid grid-cols-[1fr_2fr_1fr] items-center gap-x-4 px-4 py-2">
-                                                <Label className="font-semibold text-pink-500">{format(time, "h:mm a")}</Label>
+                                            <div className="grid grid-cols-[auto_1.5fr_1.5fr_1fr] items-center gap-x-2 px-4 py-2">
+                                                <Label className="font-semibold text-pink-500 w-20">{format(time, "h:mm a")}</Label>
                                                 <Input 
                                                     value={plan.schedule[hour]?.task || ''} 
                                                     onChange={e => handleScheduleChange(day, hour, 'task', e.target.value)} 
                                                     placeholder="Task/Activity" 
+                                                />
+                                                <Input 
+                                                    value={plan.schedule[hour]?.notes || ''} 
+                                                    onChange={e => handleScheduleChange(day, hour, 'notes', e.target.value)} 
+                                                    placeholder="Notes..." 
                                                 />
                                                 <Select
                                                     value={plan.schedule[hour]?.priority || 'Medium'}
