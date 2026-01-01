@@ -66,18 +66,17 @@ export default function WeekPlannerPage() {
     const savedBigGoal = localStorage.getItem("bigGoal");
     if (savedBigGoal) setBigGoalYear(savedBigGoal);
 
-    const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
-    if (savedMonthlyGoals) {
-      const parsedGoals = JSON.parse(savedMonthlyGoals);
-      const currentMonthIndex = getMonth(week);
-      if (parsedGoals[currentMonthIndex]) {
-        setBigGoalMonth(parsedGoals[currentMonthIndex]);
-      }
+    const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
+    if (savedMonthlyBigGoal) {
+        setBigGoalMonth(savedMonthlyBigGoal);
     }
     
     const savedAffirmations = localStorage.getItem("affirmations");
     if (savedAffirmations) {
-        setAvailableAffirmations(JSON.parse(savedAffirmations));
+        const parsedAffirmations = JSON.parse(savedAffirmations);
+        if (Array.isArray(parsedAffirmations)) {
+            setAvailableAffirmations(parsedAffirmations.filter(a => a.text));
+        }
     }
   }, [week]);
 
@@ -142,17 +141,17 @@ export default function WeekPlannerPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">5 Year Vision:</Label>
-                <Input value={fiveYearVision} readOnly disabled className="font-bold" />
+                <Input value={fiveYearVision || "Not set yet"} readOnly disabled className="font-bold" />
             </div>
              <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">Big Goal for YEAR:</Label>
-                <Input value={bigGoalYear} readOnly disabled className="font-bold" />
+                <Input value={bigGoalYear || "Not set yet"} readOnly disabled className="font-bold" />
             </div>
           </div>
           <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">Big Goal for MONTH:</Label>
-                <Input value={bigGoalMonth} readOnly disabled className="font-bold" />
+                <Input value={bigGoalMonth || "Not set yet"} readOnly disabled className="font-bold" />
             </div>
              <div className="flex items-center gap-2">
                 <Label className="w-36 font-semibold text-muted-foreground">Big Goal for WEEK:</Label>
@@ -294,3 +293,5 @@ export default function WeekPlannerPage() {
     </div>
   );
 }
+
+    
