@@ -10,8 +10,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import { usePathname } from "next/navigation"
 import { 
@@ -37,7 +35,6 @@ import {
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { ChevronRight } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 const coreLinks = [
   { href: "/define-success", label: "My Ambition", icon: Target },
@@ -85,8 +82,8 @@ export function SidebarNav() {
               </Link>
             </SidebarMenuItem>
             
-            <Collapsible defaultOpen={true} asChild>
-                <SidebarGroup>
+            <SidebarGroup asChild>
+                <Collapsible defaultOpen={true}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
                             <Heart className="h-4 w-4" />
@@ -115,11 +112,11 @@ export function SidebarNav() {
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </CollapsibleContent>
-                </SidebarGroup>
-            </Collapsible>
+                </Collapsible>
+            </SidebarGroup>
 
-            <Collapsible defaultOpen={true} asChild>
-                 <SidebarGroup>
+            <SidebarGroup asChild>
+                 <Collapsible defaultOpen={true}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
                             <DraftingCompass className="h-4 w-4" />
@@ -148,8 +145,8 @@ export function SidebarNav() {
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </CollapsibleContent>
-                </SidebarGroup>
-            </Collapsible>
+                </Collapsible>
+            </SidebarGroup>
 
              <SidebarMenuItem>
               <Link href="/ai-reflection" legacyBehavior passHref>
