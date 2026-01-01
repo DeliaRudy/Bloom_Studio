@@ -11,6 +11,7 @@ import {
   Map, 
   Sparkles,
   UserCircle,
+  BookHeart,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -68,6 +69,12 @@ const features = [
     title: "AI Reflection",
     description: "Get AI-powered insights on your progress.",
     icon: Sparkles,
+  },
+  {
+    href: "/affirmations-gratitude",
+    title: "Affirmations & Gratitude",
+    description: "Cultivate a positive mindset.",
+    icon: BookHeart,
   },
 ];
 
