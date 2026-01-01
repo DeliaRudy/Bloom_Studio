@@ -16,18 +16,32 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useAuth, useUser } from "@/firebase";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { useFirebase } from "@/firebase";
+import { useAuth, useFirebase, useUser } from "@/firebase";
+import { 
+  createUserWithEmailAndPassword, 
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
+import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { Rose } from "@/components/icons/rose";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { Separator } from "@/components/ui/separator";
+
+const GoogleIcon = () => (
+  <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
+    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+    <path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/>
+    <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.223 0-9.641-3.657-11.303-8.524l-6.571 4.819C9.656 39.663 16.318 44 24 44z"/>
+    <path fill="#1976D2" d="M43.611 20.083H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-3.044 0-5.748-1.07-7.92-2.853l-6.571 4.819C12.353 39.699 17.848 44 24 44c11.045 0 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+  </svg>
+);
 
 export default function SignupPage() {
-  const [firstName, setFirstName] = React.useState("");
-  const [lastName, setLastName] = React.useState("");
+  const [username, setUsername] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -41,11 +55,57 @@ export default function SignupPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const userDocRef = doc(firestore, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        setDocumentNonBlocking(userDocRef, {
+          id: user.uid,
+          email: user.email,
+          username: user.email,
+          creationDate: new Date().toISOString(),
+        }, { merge: true });
+
+        const sessionCollectionRef = collection(firestore, `users/${user.uid}/sessions`);
+        const sessionDocRef = doc(sessionCollectionRef, 'default');
+        setDocumentNonBlocking(sessionDocRef, {
+          id: 'default',
+          userAccountId: user.uid,
+          startTime: new Date().toISOString(),
+        }, { merge: true });
+      }
+
+      toast({
+        title: "Login Successful",
+        description: `Welcome, ${user.displayName}!`,
+      });
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        title: "Google Sign-In Failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSignup = async () => {
     setError(null);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     if (password.length < 6) {
-        setError("Password must be at least 6 characters long.");
-        return;
+      setError("Password must be at least 6 characters long.");
+      return;
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -55,20 +115,18 @@ export default function SignupPage() {
       );
       const newUser = userCredential.user;
       
-      // Update user profile
       await updateProfile(newUser, {
-        displayName: `${firstName} ${lastName}`.trim(),
+        displayName: username,
       });
       
-      // Create user document in Firestore
       const userDocRef = doc(firestore, "users", newUser.uid);
       setDocumentNonBlocking(userDocRef, {
         id: newUser.uid,
         email: newUser.email,
+        username: username,
         creationDate: new Date().toISOString(),
       }, { merge: true });
 
-      // Create a default session
       const sessionCollectionRef = collection(firestore, `users/${newUser.uid}/sessions`);
       const sessionDocRef = doc(sessionCollectionRef, 'default');
       setDocumentNonBlocking(sessionDocRef, {
@@ -102,27 +160,29 @@ export default function SignupPage() {
         <CardDescription>Enter your information to create an account</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="first-name">First name</Label>
-            <Input
-              id="first-name"
-              placeholder="Max"
-              required
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-            />
+        <Button variant="outline" onClick={handleGoogleSignIn}>
+            <GoogleIcon />
+            Sign up with Google
+        </Button>
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="last-name">Last name</Label>
-            <Input
-              id="last-name"
-              placeholder="Robinson"
-              required
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            />
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
           </div>
+        </div>
+        <div className="grid gap-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              placeholder="your_username"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
@@ -143,6 +203,16 @@ export default function SignupPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="confirm-password">Confirm Password</Label>
+          <Input
+            id="confirm-password"
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </div>
          {error && <p className="text-red-500 text-sm">{error}</p>}

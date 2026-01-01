@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserAccount": {
@@ -15,6 +16,10 @@
           "description": "User's email address.",
           "format": "email"
         },
+        "username": {
+          "type": "string",
+          "description": "The user's chosen username."
+        },
         "creationDate": {
           "type": "string",
           "description": "Date and time when the account was created.",
@@ -24,6 +29,7 @@
       "required": [
         "id",
         "email",
+        "username",
         "creationDate"
       ]
     },
@@ -345,7 +351,8 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com"
     ]
   },
   "firestore": {
