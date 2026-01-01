@@ -29,6 +29,7 @@ const fiveYearPrompts = [
   "How will I feel?",
   "What will I do in my free time?",
   "How much money will I have made?",
+  "What do I need to do to make this money and live this life?",
 ];
 
 const decadeMilestones = [30, 40, 50, 60, 70, 80, 90, 100];
