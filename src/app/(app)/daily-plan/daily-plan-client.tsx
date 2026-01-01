@@ -581,7 +581,7 @@ export function DailyPlanClient() {
                         <Card>
                           <CardHeader>
                             <CardTitle>End-of-Day Reflection</CardTitle>
-                          </Header>
+                          </CardHeader>
                           <CardContent>
                             <Textarea
                               rows={4}
