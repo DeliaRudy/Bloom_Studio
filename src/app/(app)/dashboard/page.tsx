@@ -10,6 +10,7 @@ import {
   ListTodo, 
   Map, 
   Sparkles,
+  UserCircle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -57,6 +58,12 @@ const features = [
     icon: Map,
   },
   {
+    href: "/persona-definition",
+    title: "Persona Definition",
+    description: "Define your personal 'why'.",
+    icon: UserCircle,
+  },
+{
     href: "/ai-reflection",
     title: "AI Reflection",
     description: "Get AI-powered insights on your progress.",

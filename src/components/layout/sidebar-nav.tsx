@@ -19,6 +19,7 @@ import {
   Map, 
   Sparkles,
   Flower2,
+  UserCircle,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -31,6 +32,7 @@ const links = [
   { href: "/vision-board", label: "Vision Board", icon: ImageIcon },
   { href: "/goals-list", label: "Goals List", icon: ListTodo },
   { href: "/travel-map", label: "Travel Map", icon: Map },
+  { href: "/persona-definition", label: "Persona Definition", icon: UserCircle },
   { href: "/ai-reflection", label: "AI Reflection", icon: Sparkles },
 ];
 
