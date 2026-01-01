@@ -148,7 +148,7 @@ const YearlyCycleGrid = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <div className="grid grid-cols-13 gap-1" style={{ minWidth: '800px' }}>
+        <div className="grid gap-1" style={{ gridTemplateColumns: 'auto repeat(12, 1fr)', minWidth: '800px' }}>
           {/* Header */}
           <div /> {/* Empty corner */}
           {months.map((month) => (
@@ -160,7 +160,7 @@ const YearlyCycleGrid = ({
           {/* Grid Body */}
           {days.map((day) => (
             <React.Fragment key={day}>
-              <div className="text-center font-bold text-sm pr-2">{day}</div>
+              <div className="text-center font-bold text-sm pr-2 flex items-center justify-center">{day}</div>
               {months.map((_, monthIndex) => {
                 const date = new Date(year, monthIndex, day);
                 if (date.getDate() !== day) {
@@ -176,7 +176,7 @@ const YearlyCycleGrid = ({
                   <div
                     key={monthIndex}
                     className={cn(
-                      'flex items-center justify-center rounded-sm',
+                      'flex items-center justify-center rounded-sm h-8',
                       phase && phaseStyles[phase]
                     )}
                   >
