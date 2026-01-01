@@ -6,6 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function TravelMapPage() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+  if (!apiKey) {
+    console.error("Google Maps API Key is missing. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.");
+  }
+
   return (
     <div>
       <PageHeader
