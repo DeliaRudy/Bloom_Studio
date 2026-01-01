@@ -20,6 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 type WeeklyGoal = {
   id: string;
@@ -33,6 +35,11 @@ const initialGoals: WeeklyGoal[] = [
   { id: "3", text: "Practice Officer Tang Schedule", priority: false },
 ];
 
+type Affirmation = {
+  id: string;
+  text: string;
+}
+
 export default function WeekPlannerPage() {
   const { toast } = useToast();
   const [week, setWeek] = React.useState(new Date());
@@ -45,7 +52,9 @@ export default function WeekPlannerPage() {
   const [weeklyGoals, setWeeklyGoals] = React.useState<WeeklyGoal[]>(initialGoals);
   const [goalsAchieved, setGoalsAchieved] = React.useState(0);
   
-  const [affirmations, setAffirmations] = React.useState("");
+  const [availableAffirmations, setAvailableAffirmations] = React.useState<Affirmation[]>([]);
+  const [selectedAffirmations, setSelectedAffirmations] = React.useState<string[]>([]);
+  
   const [habits, setHabits] = React.useState("");
   const [peopleToConnect, setPeopleToConnect] = React.useState("");
 
@@ -64,6 +73,11 @@ export default function WeekPlannerPage() {
       if (parsedGoals[currentMonthIndex]) {
         setBigGoalMonth(parsedGoals[currentMonthIndex]);
       }
+    }
+    
+    const savedAffirmations = localStorage.getItem("affirmations");
+    if (savedAffirmations) {
+        setAvailableAffirmations(JSON.parse(savedAffirmations));
     }
   }, [week]);
 
@@ -91,6 +105,23 @@ export default function WeekPlannerPage() {
   
   const handlePriorityChange = (id: string) => {
     setWeeklyGoals(weeklyGoals.map(goal => goal.id === id ? { ...goal, priority: !goal.priority } : goal));
+  };
+
+  const handleAffirmationSelect = (affirmationText: string) => {
+    setSelectedAffirmations(prev => {
+        if (prev.includes(affirmationText)) {
+            return prev.filter(a => a !== affirmationText);
+        }
+        if (prev.length < 4) {
+            return [...prev, affirmationText];
+        }
+        toast({
+            title: "Limit Reached",
+            description: "You can select up to 4 affirmations.",
+            variant: "destructive"
+        })
+        return prev;
+    });
   };
 
   const goalsSet = weeklyGoals.length;
@@ -191,7 +222,34 @@ export default function WeekPlannerPage() {
         <Card>
             <CardHeader><CardTitle>Affirmations for the Week</CardTitle></CardHeader>
             <CardContent>
-                <Textarea value={affirmations} onChange={e => setAffirmations(e.target.value)} placeholder="Write your weekly affirmations..." />
+                <div className="space-y-2">
+                    <Label>Select up to 4 affirmations</Label>
+                    <Select onValueChange={handleAffirmationSelect} value={selectedAffirmations.join(', ')}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select affirmations for the week" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableAffirmations.length > 0 ? (
+                                availableAffirmations.map((affirmation) => (
+                                    <SelectItem 
+                                        key={affirmation.id} 
+                                        value={affirmation.text} 
+                                        onSelect={(e) => { e.preventDefault(); handleAffirmationSelect(affirmation.text)}}>
+                                        <div className="flex items-center">
+                                            <Checkbox checked={selectedAffirmations.includes(affirmation.text)} className="mr-2"/>
+                                            <span>{affirmation.text}</span>
+                                        </div>
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                <SelectItem value="no-affirmations" disabled>No affirmations defined yet</SelectItem>
+                            )}
+                        </SelectContent>
+                    </Select>
+                     <div className="flex flex-wrap gap-1 pt-2">
+                        {selectedAffirmations.map(affirmation => <Badge key={affirmation} variant="secondary">{affirmation}</Badge>)}
+                    </div>
+                </div>
             </CardContent>
         </Card>
          <div className="space-y-6">

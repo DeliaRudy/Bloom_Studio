@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -31,9 +32,20 @@ export default function AffirmationsGratitudePage() {
   ]);
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    const savedAffirmations = localStorage.getItem("affirmations");
+    if (savedAffirmations) {
+      setAffirmations(JSON.parse(savedAffirmations));
+    }
+    const savedGratitude = localStorage.getItem("gratitude");
+    if (savedGratitude) {
+      setGratitude(JSON.parse(savedGratitude));
+    }
+  }, []);
+
   const handleSave = () => {
-    console.log("Saving Affirmations:", affirmations);
-    console.log("Saving Gratitude:", gratitude);
+    localStorage.setItem("affirmations", JSON.stringify(affirmations.filter(a => a.text.trim() !== '')));
+    localStorage.setItem("gratitude", JSON.stringify(gratitude.filter(g => g.text.trim() !== '')));
     toast({
       title: "Saved!",
       description: "Your affirmations and gratitude have been saved.",
