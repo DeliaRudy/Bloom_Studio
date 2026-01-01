@@ -17,8 +17,10 @@ import { Progress } from "@/components/ui/progress";
 import * as React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { DatePicker } from "@/components/ui/datepicker";
 import { addYears, differenceInYears, parse } from 'date-fns';
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc, updateDoc, addDoc } from "firebase/firestore";
+import { setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const fiveYearPrompts = [
   "Where will I live?",
@@ -32,44 +34,98 @@ const fiveYearPrompts = [
   "What do I need to do to make this money and live this life?",
 ];
 
-const decadeMilestones = [30, 40, 50, 60, 70, 80, 90, 100];
+const decadeMilestonesAges = [30, 40, 50, 60, 70, 80, 90, 100];
+
+type LifeVisionMilestone = {
+    id: string;
+    age: number;
+    milestoneText: string;
+}
+
+type FiveYearVisionPrompt = {
+    id: string;
+    promptKey: string;
+    responseText: string;
+}
 
 export default function LifeVisionPage() {
-  const [decadeValues, setDecadeValues] = React.useState<Record<number, string>>(
-    decadeMilestones.reduce((acc, age) => ({ ...acc, [age]: "" }), {})
-  );
-  const [fiveYearValues, setFiveYearValues] = React.useState<Record<string, string>>(
-    fiveYearPrompts.reduce((acc, prompt) => ({ ...acc, [prompt]: "" }), {})
-  );
+  const { firestore, user } = useFirebase();
   const [dateOfBirth, setDateOfBirth] = React.useState<string>("");
   const [visionStatementDream, setVisionStatementDream] = React.useState("");
   const [visionStatementAmount, setVisionStatementAmount] = React.useState("");
 
-  
   const { toast } = useToast();
+
+  const lifeVisionMilestonesCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/sessions/default/lifeVisionMilestones`);
+  }, [firestore, user]);
+
+  const fiveYearVisionPromptsCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`);
+  }, [firestore, user]);
+
+  const { data: decadeMilestones } = useCollection<LifeVisionMilestone>(lifeVisionMilestonesCollection);
+  const { data: fiveYearPromptsData } = useCollection<FiveYearVisionPrompt>(fiveYearVisionPromptsCollection);
   
-  const fiveYearsFromNow = addYears(new Date(), 5);
-  
-  const dobDate = dateOfBirth ? parse(dateOfBirth, 'dd/MM/yyyy', new Date()) : undefined;
-  const ageInFiveYears = dobDate && !isNaN(dobDate.getTime()) ? differenceInYears(fiveYearsFromNow, dobDate) : null;
+  const decadeValues = React.useMemo(() => {
+    const values: Record<number, LifeVisionMilestone | undefined> = {};
+    decadeMilestones?.forEach(item => {
+        values[item.age] = item;
+    });
+    return values;
+  }, [decadeMilestones]);
+
+  const fiveYearValues = React.useMemo(() => {
+    const values: Record<string, FiveYearVisionPrompt | undefined> = {};
+    fiveYearPromptsData?.forEach(item => {
+        values[item.promptKey] = item;
+    });
+    return values;
+  }, [fiveYearPromptsData]);
+
+  const handleDecadeChange = (age: number, milestoneText: string) => {
+    if (!lifeVisionMilestonesCollection) return;
+    const existing = decadeValues[age];
+    if (existing) {
+        const docRef = doc(lifeVisionMilestonesCollection, existing.id);
+        updateDoc(docRef, { milestoneText });
+    } else {
+        addDocumentNonBlocking(lifeVisionMilestonesCollection, { age, milestoneText, sessionID: 'default' });
+    }
+  };
+
+  const handleFiveYearChange = (promptKey: string, responseText: string) => {
+    if (!fiveYearVisionPromptsCollection) return;
+    const existing = fiveYearValues[promptKey];
+    if (existing) {
+        const docRef = doc(fiveYearVisionPromptsCollection, existing.id);
+        updateDoc(docRef, { responseText });
+    } else {
+        addDocumentNonBlocking(fiveYearVisionPromptsCollection, { promptKey, responseText, sessionID: 'default' });
+    }
+  };
 
 
   const handleSave = () => {
-    const visionStatement = `I will ${visionStatementDream || "[dream]"} and I will have made/invested $${visionStatementAmount || "[amount]"} by ${fiveYearsFromNow.toLocaleDateString()}.`;
-    localStorage.setItem("5YearVision", visionStatement);
-
-    console.log("Saving life vision:", { decadeValues, fiveYearValues, dateOfBirth });
+    // This function can be used for navigation or other side-effects,
+    // as data is now saved on-the-fly.
     toast({
       title: "Life Vision Saved",
-      description: "Your long-term plans have been successfully updated.",
+      description: "Your long-term plans have been successfully updated in the database.",
     });
   };
 
+  const fiveYearsFromNow = addYears(new Date(), 5);
+  const dobDate = dateOfBirth ? parse(dateOfBirth, 'dd/MM/yyyy', new Date()) : undefined;
+  const ageInFiveYears = dobDate && !isNaN(dobDate.getTime()) ? differenceInYears(fiveYearsFromNow, dobDate) : null;
+
   const filledCount =
-    Object.values(decadeValues).filter(Boolean).length +
-    Object.values(fiveYearValues).filter(Boolean).length +
+    (decadeMilestones?.filter(d => d.milestoneText).length || 0) +
+    (fiveYearPromptsData?.filter(p => p.responseText).length || 0) +
     (dateOfBirth ? 1 : 0);
-  const totalCount = decadeMilestones.length + fiveYearPrompts.length + 1;
+  const totalCount = decadeMilestonesAges.length + fiveYearPrompts.length + 1;
   const progress = (filledCount / totalCount) * 100;
 
   const visionStatementPreview = `I will ${visionStatementDream || "[dream]"} and I will have made/invested $${visionStatementAmount || "[amount]"} by ${fiveYearsFromNow.toLocaleDateString()}.`
@@ -122,16 +178,14 @@ export default function LifeVisionPage() {
               <AccordionTrigger className="text-lg font-headline">Decade Milestones</AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
-                  {decadeMilestones.map((age) => (
+                  {decadeMilestonesAges.map((age) => (
                     <div key={age} className="space-y-2">
                       <Label htmlFor={`decade-${age}`}>By age {age}, I will...</Label>
                       <Input
                         id={`decade-${age}`}
                         placeholder={`e.g., have visited all continents`}
-                        value={decadeValues[age]}
-                        onChange={(e) =>
-                          setDecadeValues((prev) => ({ ...prev, [age]: e.target.value }))
-                        }
+                        defaultValue={decadeValues[age]?.milestoneText || ''}
+                        onBlur={(e) => handleDecadeChange(age, e.target.value)}
                       />
                     </div>
                   ))}
@@ -150,10 +204,8 @@ export default function LifeVisionPage() {
                       <Label htmlFor={prompt}>{prompt}</Label>
                       <Textarea
                         id={prompt}
-                        value={fiveYearValues[prompt]}
-                        onChange={(e) =>
-                          setFiveYearValues((prev) => ({ ...prev, [prompt]: e.target.value }))
-                        }
+                        defaultValue={fiveYearValues[prompt]?.responseText || ''}
+                        onBlur={(e) => handleFiveYearChange(prompt, e.target.value)}
                         placeholder="Describe your vision..."
                       />
                     </div>
