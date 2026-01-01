@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { format, addDays, startOfWeek } from "date-fns";
+import { format, addDays, startOfWeek, getMonth } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,9 +57,15 @@ export default function WeekPlannerPage() {
     const savedBigGoal = localStorage.getItem("bigGoal");
     if (savedBigGoal) setBigGoalYear(savedBigGoal);
 
-    const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
-    if (savedMonthlyBigGoal) setBigGoalMonth(savedMonthlyBigGoal);
-  }, []);
+    const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
+    if (savedMonthlyGoals) {
+      const parsedGoals = JSON.parse(savedMonthlyGoals);
+      const currentMonthIndex = getMonth(week);
+      if (parsedGoals[currentMonthIndex]) {
+        setBigGoalMonth(parsedGoals[currentMonthIndex]);
+      }
+    }
+  }, [week]);
 
   const weekStart = startOfWeek(week, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
