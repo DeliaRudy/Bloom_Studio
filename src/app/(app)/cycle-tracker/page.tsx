@@ -1,9 +1,7 @@
-
 'use client';
 import * as React from 'react';
 import {
   format,
-  startOfYear,
   addDays,
   isSameDay,
   parse,
@@ -11,6 +9,10 @@ import {
   getDate,
   getMonth,
   getYear,
+  startOfYear,
+  endOfYear,
+  eachDayOfInterval,
+  parseISO,
 } from 'date-fns';
 import {
   Card,
@@ -30,23 +32,23 @@ import {
   deleteDocumentNonBlocking,
   addDocumentNonBlocking,
 } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { CycleDay } from '@/lib/types';
 import {
-  collection,
-  doc,
-  query,
-  where,
-  getDocs,
-  writeBatch,
-} from 'firebase/firestore';
-import { CycleDay, CycleSymptom } from '@/lib/types';
-import {
-  Calendar as CalendarIcon,
-  PlusCircle,
-  Trash2,
-  Heart,
-  X,
-} from 'lucide-react';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/datepicker';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Check, ChevronsUpDown, Heart, X, Sparkles } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -56,12 +58,9 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
-import { Check, ChevronsUpDown } from 'lucide-react';
+  predictCyclePhases,
+  type PredictCyclePhasesOutput,
+} from '@/ai/flows/predict-cycle-phases';
 
 const flowLevels = ['none', 'light', 'medium', 'heavy'] as const;
 type FlowLevel = (typeof flowLevels)[number];
@@ -71,25 +70,32 @@ const flowStyles: Record<
   { fill: string; stroke: string; label: string }
 > = {
   none: {
-    fill: 'fill-white',
-    stroke: 'stroke-muted-foreground',
+    fill: 'fill-transparent',
+    stroke: 'stroke-muted-foreground/50',
     label: 'None',
   },
   light: {
-    fill: 'fill-[#f5c1cd]',
-    stroke: 'stroke-[#d88fa3]',
+    fill: 'fill-[#FADADD]',
+    stroke: 'stroke-[#F8C4D3]',
     label: 'Light',
   },
   medium: {
-    fill: 'fill-[#d88fa3]',
-    stroke: 'stroke-[#6d100f]',
+    fill: 'fill-[#F8C4D3]',
+    stroke: 'stroke-[#F3A0B9]',
     label: 'Medium',
   },
   heavy: {
-    fill: 'fill-[#6d100f]',
-    stroke: 'stroke-[#6d100f]',
+    fill: 'fill-[#F3A0B9]',
+    stroke: 'stroke-[#F3A0B9]',
     label: 'Heavy',
   },
+};
+
+const phaseStyles = {
+  menstruation: 'bg-[#FADADD]/50',
+  follicular: 'bg-[#D3E4CD]/50',
+  ovulation: 'bg-[#FFF2CC]/50',
+  luteal: 'bg-[#D1E0E9]/50',
 };
 
 const allSymptoms = [
@@ -114,11 +120,26 @@ const YearlyCycleGrid = ({
   year,
   cycleData,
   onDayClick,
+  predictedPhases,
 }: {
   year: number;
   cycleData: Record<string, CycleDay>;
   onDayClick: (date: Date, currentFlow: FlowLevel) => void;
+  predictedPhases: PredictCyclePhasesOutput | null;
 }) => {
+  const getPhaseForDate = (date: Date): keyof typeof phaseStyles | null => {
+    if (!predictedPhases) return null;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    for (const phase in predictedPhases) {
+      const { startDate, endDate } =
+        predictedPhases[phase as keyof typeof predictedPhases];
+      if (dateStr >= startDate && dateStr <= endDate) {
+        return phase as keyof typeof phaseStyles;
+      }
+    }
+    return null;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -127,7 +148,7 @@ const YearlyCycleGrid = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <div className="grid grid-cols-13 gap-1" style={{minWidth: '800px'}}>
+        <div className="grid grid-cols-13 gap-1" style={{ minWidth: '800px' }}>
           {/* Header */}
           <div /> {/* Empty corner */}
           {months.map((month) => (
@@ -149,11 +170,15 @@ const YearlyCycleGrid = ({
                 const dateKey = format(date, 'yyyy-MM-dd');
                 const dayData = cycleData[dateKey];
                 const flow = dayData?.flow || 'none';
+                const phase = getPhaseForDate(date);
 
                 return (
                   <div
                     key={monthIndex}
-                    className="flex items-center justify-center"
+                    className={cn(
+                      'flex items-center justify-center rounded-sm',
+                      phase && phaseStyles[phase]
+                    )}
                   >
                     <button onClick={() => onDayClick(date, flow)}>
                       <Heart
@@ -265,6 +290,9 @@ export default function CycleTrackerPage() {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
     new Date()
   );
+  const [lastPeriodDate, setLastPeriodDate] = React.useState<Date | undefined>();
+  const [predictedPhases, setPredictedPhases] =
+    React.useState<PredictCyclePhasesOutput | null>(null);
   const [note, setNote] = React.useState('');
 
   const dateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
@@ -294,12 +322,17 @@ export default function CycleTrackerPage() {
   const handleDayClick = (date: Date, currentFlow: FlowLevel) => {
     if (!cycleCollection) return;
 
-    const newFlowIndex = (flowLevels.indexOf(currentFlow) + 1) % flowLevels.length;
+    const newFlowIndex =
+      (flowLevels.indexOf(currentFlow) + 1) % flowLevels.length;
     const newFlow = flowLevels[newFlowIndex];
     const dateKey = format(date, 'yyyy-MM-dd');
     const dayDocRef = doc(cycleCollection, dateKey);
 
-    setDocumentNonBlocking(dayDocRef, { flow: newFlow, id: dateKey }, { merge: true });
+    setDocumentNonBlocking(
+      dayDocRef,
+      { flow: newFlow, id: dateKey },
+      { merge: true }
+    );
     toast({
       title: 'Flow Updated',
       description: `Set flow to ${newFlow} for ${format(date, 'MMM d')}.`,
@@ -323,6 +356,35 @@ export default function CycleTrackerPage() {
     const dayDocRef = doc(cycleCollection, dateKey);
     setDocumentNonBlocking(dayDocRef, { symptoms: newSymptoms }, { merge: true });
   };
+  
+  const handlePredictPhases = async () => {
+    if (!lastPeriodDate) {
+      toast({
+        title: 'Date Missing',
+        description: 'Please select the start date of your last period.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      const result = await predictCyclePhases({
+        lastPeriodStartDate: format(lastPeriodDate, 'yyyy-MM-dd'),
+      });
+      setPredictedPhases(result);
+      toast({
+        title: 'Phases Predicted!',
+        description:
+          'Your upcoming cycle phases have been highlighted on the tracker.',
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Prediction Failed',
+        description: 'Could not predict cycle phases at this time.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div>
@@ -336,8 +398,9 @@ export default function CycleTrackerPage() {
             year={currentYear}
             cycleData={cycleData}
             onDayClick={handleDayClick}
+            predictedPhases={predictedPhases}
           />
-           <div className="flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-4">
             <Button onClick={() => setCurrentYear(currentYear - 1)}>
               Previous Year
             </Button>
@@ -353,6 +416,7 @@ export default function CycleTrackerPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <Label>Select a Date</Label>
                 <DatePicker
                   date={selectedDate}
                   setDate={setSelectedDate}
@@ -360,14 +424,14 @@ export default function CycleTrackerPage() {
                 />
               </div>
               <div>
-                <h3 className="font-semibold mb-2">Symptoms</h3>
+                <Label className="font-semibold mb-2">Symptoms</Label>
                 <SymptomsCombobox
                   selected={selectedSymptoms}
                   onChange={handleSymptomChange}
                 />
               </div>
               <div>
-                <h3 className="font-semibold mb-2">Note</h3>
+                <Label className="font-semibold mb-2">Note for the day</Label>
                 <Textarea
                   placeholder="Add a note about symptoms, mood, etc."
                   value={note}
@@ -382,18 +446,146 @@ export default function CycleTrackerPage() {
               <CardTitle>Menstrual Flow</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-2">
-                    {Object.entries(flowStyles).filter(([key]) => key !== 'none').map(([key, style]) => (
-                        <div key={key} className="flex items-center gap-3">
-                            <Heart className={cn('w-5 h-5', style.fill, style.stroke)} strokeWidth={1.5} />
-                            <span className="text-sm font-medium">{style.label}</span>
-                        </div>
-                    ))}
-                </div>
+              <div className="space-y-2">
+                {Object.entries(flowStyles)
+                  .map(([key, style]) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <Heart
+                        className={cn('w-5 h-5', style.fill, style.stroke)}
+                        strokeWidth={1.5}
+                      />
+                      <span className="text-sm font-medium">{style.label}</span>
+                    </div>
+                  ))}
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-8">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="font-headline">AI Phase Prediction</CardTitle>
+            <CardDescription>
+              Select the start date of your last period to predict and highlight
+              your upcoming cycle phases on the tracker.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="w-full sm:w-auto">
+              <Label>Last Period Start Date</Label>
+              <DatePicker
+                date={lastPeriodDate}
+                setDate={setLastPeriodDate}
+                className="w-full"
+              />
+            </div>
+            <Button onClick={handlePredictPhases} className="w-full sm:w-auto sm:self-end">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Predict Phases
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+              <CardTitle>Phases Key</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                 {Object.entries(phaseStyles).map(([key, style]) => (
+                    <div key={key} className="flex items-center gap-3">
+                        <div className={cn('w-4 h-4 rounded-full', style)}></div>
+                        <span className="text-sm font-medium capitalize">{key}</span>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+      </div>
+
+       <Card className="mt-8">
+        <CardHeader>
+            <CardTitle className="font-headline">Cycle Syncing Guide</CardTitle>
+            <CardDescription>Learn how to work with your body's natural rhythms.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="menstruation">
+                    <AccordionTrigger className='font-semibold text-base' style={{color: '#F3A0B9'}}>Phase 1: Menstruation (Days 1-7)</AccordionTrigger>
+                    <AccordionContent className="prose prose-sm max-w-none">
+                        <p>Your body is releasing the uterine lining. Energy is lowest. This is a time for rest, reflection, and gentle movement.</p>
+                        <h4>Productivity:</h4>
+                        <ul>
+                            <li>Rest &amp; Recover: Allow yourself downtime.</li>
+                            <li>Reflect &amp; Journal: Great for introspection and setting intentions.</li>
+                            <li>Gentle Tasks: Focus on low-energy, solo work.</li>
+                        </ul>
+                        <h4>Self-Care:</h4>
+                        <ul>
+                            <li>Nourishing Foods: Iron-rich foods like leafy greens and red meat.</li>
+                            <li>Warmth: Use a heating pad, take warm baths.</li>
+                            <li>Gentle Movement: Yin yoga, stretching, or walking.</li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="follicular">
+                    <AccordionTrigger className='font-semibold text-base' style={{color: '#9DBF94'}}>Phase 2: Follicular (Days 8-14)</AccordionTrigger>
+                    <AccordionContent className="prose prose-sm max-w-none">
+                        <p>Estrogen is rising, boosting your energy, mood, and brain skills. It's a time for new beginnings and planning.</p>
+                        <h4>Productivity:</h4>
+                        <ul>
+                            <li>Brainstorm &amp; Strategize: Creativity and problem-solving are high.</li>
+                            <li>Start New Projects: Your motivation is increasing.</li>
+                            <li>Learn New Skills: Your mind is sharp and receptive.</li>
+                        </ul>
+                        <h4>Self-Care:</h4>
+                        <ul>
+                            <li>Lighter Foods: Focus on lean proteins, fresh vegetables, and fermented foods.</li>
+                            <li>Cardio &amp; Strength: Your body can handle more intense workouts.</li>
+                            <li>Socialize: You'll likely feel more outgoing.</li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="ovulation">
+                    <AccordionTrigger className='font-semibold text-base' style={{color: '#EAC468'}}>Phase 3: Ovulation (Days 15-17)</AccordionTrigger>
+                    <AccordionContent className="prose prose-sm max-w-none">
+                        <p>Estrogen and testosterone peak, making you feel your most confident, energetic, and social. This is the time to connect.</p>
+                        <h4>Productivity:</h4>
+                        <ul>
+                            <li>Collaborate: Perfect for team meetings and networking.</li>
+                            <li>Important Conversations: Communication skills are at their peak.</li>
+                            <li>Public Speaking/Presenting: You're magnetic and persuasive.</li>
+                        </ul>
+                        <h4>Self-Care:</h4>
+                        <ul>
+                            <li>High-Intensity Workouts: HIIT, running, or group fitness classes.</li>
+                            <li>Light &amp; Fresh Foods: Salads, smoothies, and grilled vegetables.</li>
+                            <li>Connect with Others: Plan social events or date nights.</li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="luteal">
+                    <AccordionTrigger className='font-semibold text-base' style={{color: '#A9C4D3'}}>Phase 4: Luteal (Days 18-28)</AccordionTrigger>
+                    <AccordionContent className="prose prose-sm max-w-none">
+                        <p>Progesterone rises, energy winds down. This is a time for nesting, organizing, and completing tasks.</p>
+                        <h4>Productivity:</h4>
+                        <ul>
+                            <li>Detail-Oriented Work: Great for editing, organizing, and admin tasks.</li>
+                            <li>Wrap Up Projects: Focus on completion rather than starting new things.</li>
+                            <li>Work Independently: You may prefer focused, solo work.</li>
+                        </ul>
+                        <h4>Self-Care:</h4>
+                        <ul>
+                            <li>Comforting Foods: Complex carbs like sweet potatoes and brown rice to stabilize mood.</li>
+                            <li>Moderate Exercise: Pilates, strength training, or hiking.</li>
+                            <li>Create a Cozy Environment: Spend time at home, decluttering and nesting.</li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </CardContent>
+       </Card>
     </div>
   );
 }
