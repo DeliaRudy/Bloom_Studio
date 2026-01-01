@@ -35,6 +35,9 @@ import {
   CalendarPlus
 } from "lucide-react"
 import Link from "next/link"
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
+import { ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 const coreLinks = [
   { href: "/define-success", label: "My Ambition", icon: Target },
@@ -82,57 +85,71 @@ export function SidebarNav() {
               </Link>
             </SidebarMenuItem>
             
-            <SidebarGroup>
-                <SidebarGroupLabel className="flex items-center gap-2">
-                    <Heart className="h-4 w-4" />
-                    My Core
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                     <SidebarMenu>
-                        {coreLinks.map((link) => (
-                            <SidebarMenuItem key={link.href}>
-                            <Link href={link.href} legacyBehavior passHref>
-                                <SidebarMenuButton
-                                isActive={pathname === link.href}
-                                tooltip={{
-                                    children: link.label,
-                                }}
-                                >
-                                <link.icon className="h-5 w-5" />
-                                <span>{link.label}</span>
-                                </SidebarMenuButton>
-                            </Link>
-                            </SidebarMenuItem>
-                        ))}
-                    </SidebarMenu>
-                </SidebarGroupContent>
-            </SidebarGroup>
+            <Collapsible defaultOpen={true} asChild>
+                <SidebarGroup>
+                    <CollapsibleTrigger asChild>
+                        <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
+                            <Heart className="h-4 w-4" />
+                            My Core
+                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/label:rotate-90" />
+                        </SidebarGroupLabel>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {coreLinks.map((link) => (
+                                    <SidebarMenuItem key={link.href}>
+                                    <Link href={link.href} legacyBehavior passHref>
+                                        <SidebarMenuButton
+                                        isActive={pathname === link.href}
+                                        tooltip={{
+                                            children: link.label,
+                                        }}
+                                        >
+                                        <link.icon className="h-5 w-5" />
+                                        <span>{link.label}</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </CollapsibleContent>
+                </SidebarGroup>
+            </Collapsible>
 
-            <SidebarGroup>
-                <SidebarGroupLabel className="flex items-center gap-2">
-                    <DraftingCompass className="h-4 w-4" />
-                    My Plans
-                </SidebarGroupLabel>
-                <SidebarGroupContent>
-                     <SidebarMenu>
-                        {plansLinks.map((link) => (
-                            <SidebarMenuItem key={link.href}>
-                            <Link href={link.href} legacyBehavior passHref>
-                                <SidebarMenuButton
-                                isActive={pathname === link.href}
-                                tooltip={{
-                                    children: link.label,
-                                }}
-                                >
-                                <link.icon className="h-5 w-5" />
-                                <span>{link.label}</span>
-                                </SidebarMenuButton>
-                            </Link>
-                            </SidebarMenuItem>
-                        ))}
-                    </SidebarMenu>
-                </SidebarGroupContent>
-            </SidebarGroup>
+            <Collapsible defaultOpen={true} asChild>
+                 <SidebarGroup>
+                    <CollapsibleTrigger asChild>
+                        <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
+                            <DraftingCompass className="h-4 w-4" />
+                            My Plans
+                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/label:rotate-90" />
+                        </SidebarGroupLabel>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {plansLinks.map((link) => (
+                                    <SidebarMenuItem key={link.href}>
+                                    <Link href={link.href} legacyBehavior passHref>
+                                        <SidebarMenuButton
+                                        isActive={pathname === link.href}
+                                        tooltip={{
+                                            children: link.label,
+                                        }}
+                                        >
+                                        <link.icon className="h-5 w-5" />
+                                        <span>{link.label}</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </CollapsibleContent>
+                </SidebarGroup>
+            </Collapsible>
 
              <SidebarMenuItem>
               <Link href="/ai-reflection" legacyBehavior passHref>
