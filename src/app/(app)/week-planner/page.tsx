@@ -40,6 +40,12 @@ type Affirmation = {
   text: string;
 }
 
+type PersonToConnect = {
+    id: string;
+    name: string;
+    connected: boolean;
+};
+
 export default function WeekPlannerPage() {
   const { toast } = useToast();
   const [week, setWeek] = React.useState(new Date());
@@ -56,7 +62,7 @@ export default function WeekPlannerPage() {
   const [selectedAffirmations, setSelectedAffirmations] = React.useState<string[]>([]);
   
   const [habits, setHabits] = React.useState("");
-  const [peopleToConnect, setPeopleToConnect] = React.useState("");
+  const [peopleToConnect, setPeopleToConnect] = React.useState<PersonToConnect[]>([]);
 
 
   React.useEffect(() => {
@@ -73,16 +79,10 @@ export default function WeekPlannerPage() {
     } else {
         setBigGoalYear("Not set yet");
     }
-
-    const currentMonthIndex = getMonth(week);
-    const savedMonthlyGoals = localStorage.getItem("monthlyGoals");
-     if (savedMonthlyGoals) {
-      const parsedGoals = JSON.parse(savedMonthlyGoals);
-      if(parsedGoals[currentMonthIndex]) {
-        setBigGoalMonth(parsedGoals[currentMonthIndex]);
-      } else {
-        setBigGoalMonth("Not set yet");
-      }
+    
+    const savedMonthlyBigGoal = localStorage.getItem("monthlyBigGoal");
+    if (savedMonthlyBigGoal) {
+      setBigGoalMonth(savedMonthlyBigGoal);
     } else {
       setBigGoalMonth("Not set yet");
     }
@@ -99,10 +99,10 @@ export default function WeekPlannerPage() {
     const stopHabit = localStorage.getItem("selectedStopHabit");
 
     let habitsText = "";
-    if(startHabit) habitsText += `Start: ${startHabit}\n`;
-    if(stopHabit) habitsText += `Stop: ${stopHabit}`;
+    if(startHabit && startHabit !== 'undefined') habitsText += `Start: ${startHabit}\n`;
+    if(stopHabit && stopHabit !== 'undefined') habitsText += `Stop: ${stopHabit}`;
 
-    if(!startHabit && !stopHabit) {
+    if(!habitsText.trim()) {
         setHabits("Not set yet");
     } else {
         setHabits(habitsText.trim());
@@ -151,6 +151,30 @@ export default function WeekPlannerPage() {
         })
         return prev;
     });
+  };
+
+  const handleAddPerson = () => {
+    if (peopleToConnect.length < 7) {
+        setPeopleToConnect([...peopleToConnect, {id: Date.now().toString(), name: "", connected: false}]);
+    } else {
+        toast({
+            title: "Limit Reached",
+            description: "You can add up to 7 people to connect with.",
+            variant: "destructive",
+        })
+    }
+  };
+
+  const handleRemovePerson = (id: string) => {
+    setPeopleToConnect(peopleToConnect.filter(p => p.id !== id));
+  };
+
+  const handlePersonNameChange = (id: string, name: string) => {
+    setPeopleToConnect(peopleToConnect.map(p => p.id === id ? {...p, name} : p));
+  };
+
+  const handleToggleConnected = (id: string) => {
+    setPeopleToConnect(peopleToConnect.map(p => p.id === id ? {...p, connected: !p.connected} : p));
   };
 
   const goalsSet = weeklyGoals.length;
@@ -289,7 +313,25 @@ export default function WeekPlannerPage() {
             <Card>
                 <CardHeader><CardTitle>People to Connect with This Week</CardTitle></CardHeader>
                 <CardContent>
-                    <Textarea value={peopleToConnect} onChange={e => setPeopleToConnect(e.target.value)} placeholder="List people you want to connect with..." />
+                    <div className="space-y-2">
+                        {peopleToConnect.map(person => (
+                            <div key={person.id} className="flex items-center gap-2">
+                                <Checkbox id={`person-${person.id}`} checked={person.connected} onCheckedChange={() => handleToggleConnected(person.id)} />
+                                <Input
+                                    value={person.name}
+                                    onChange={(e) => handlePersonNameChange(person.id, e.target.value)}
+                                    placeholder="Enter person's name..."
+                                    className={`h-8 ${person.connected ? 'line-through text-muted-foreground' : ''}`}
+                                />
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleRemovePerson(person.id)}>
+                                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                                </Button>
+                            </div>
+                        ))}
+                        <Button variant="outline" size="sm" className="w-full" onClick={handleAddPerson} disabled={peopleToConnect.length >= 7}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Person
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         </div>
