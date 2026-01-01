@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useUser } from '@/firebase';
+import { sendTestEmailNotification } from './actions';
 
 type Notification = {
   id: string;
@@ -60,7 +62,7 @@ const mockNotifications: Notification[] = [
   },
 ];
 
-type TestNotificationType = 'generic' | 'planDay' | 'productivity' | 'habits' | 'reflection';
+export type TestNotificationType = 'generic' | 'planDay' | 'productivity' | 'habits' | 'reflection';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = React.useState(mockNotifications);
@@ -74,8 +76,10 @@ export default function NotificationsPage() {
   const [reflectionReminder, setReflectionReminder] = React.useState(true);
 
   const [testNotificationType, setTestNotificationType] = React.useState<TestNotificationType>('generic');
+  const [isSending, setIsSending] = React.useState(false);
 
   const { toast } = useToast();
+  const { user } = useUser();
 
   const handleToggleRead = (id: string) => {
     setNotifications(
@@ -119,46 +123,34 @@ export default function NotificationsPage() {
     setProductivityReminders(newTimes);
   }
 
-  const handleSendTest = () => {
-    let toastTitle = "Test Notification";
-    let toastDescription = "This is a generic test notification.";
-
-    switch (testNotificationType) {
-        case 'planDay':
-            toastTitle = "Reminder: Plan Your Day!";
-            toastDescription = "Good morning! It's 8am. Take a few moments to set your priorities for a successful day ahead.";
-            break;
-        case 'productivity':
-            toastTitle = "Your Productivity Matrix is Ready!";
-            toastDescription = (
-                <div className="text-xs">
-                    <p className="font-bold">High Impact / Urgent:</p>
-                    <ul className="list-disc pl-4"><li>Finalize Q3 report</li></ul>
-                    <p className="font-bold mt-2">High Impact / Not Urgent:</p>
-                    <ul className="list-disc pl-4"><li>Brainstorm project alpha ideas</li></ul>
-                    <p className="font-bold mt-2">Low Impact / Urgent:</p>
-                    <ul className="list-disc pl-4"><li>RSVP to team lunch</li></ul>
-                    <p className="font-bold mt-2">Low Impact / Not Urgent:</p>
-                    <ul className="list-disc pl-4"><li>Organize desktop files</li></ul>
-                     <p className="font-bold mt-2 text-primary">2-Min Task: Reply to Jane's email</p>
-                </div>
-            );
-            break;
-        case 'habits':
-            toastTitle = "Habit Reminder: Remember Your 'Why'";
-            toastDescription = "Today's tasks involve a lot of focus. Remember your goal to 'Be More Disciplined' to power through them.";
-            break;
-        case 'reflection':
-            toastTitle = "Reminder: Time to Reflect";
-            toastDescription = "It's 8pm. How did today go? Take a moment to capture your thoughts and wins in your Daily Plan.";
-            break;
+  const handleSendTest = async () => {
+    if (!user?.email) {
+        toast({
+            title: "Error",
+            description: "Could not find user email.",
+            variant: "destructive"
+        });
+        return;
     }
+    setIsSending(true);
+    const result = await sendTestEmailNotification({
+        email: user.email,
+        notificationType: testNotificationType
+    });
 
-    toast({
-        title: toastTitle,
-        description: toastDescription,
-        duration: 9000,
-    })
+    if (result.error) {
+        toast({
+            title: "Failed to Send Test Email",
+            description: result.error,
+            variant: "destructive"
+        });
+    } else {
+        toast({
+            title: "Test Email Sent!",
+            description: `An email was generated for ${user.email}. Check the server console to see it.`
+        });
+    }
+    setIsSending(false);
   }
 
   const filteredNotifications = showUnreadOnly
@@ -283,8 +275,7 @@ export default function NotificationsPage() {
                         </div>
                         <Separator/>
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="habits-reminder">Important Habits Reminder</Label>
-                            <Switch
+                            <Label htmlFor="habits-reminder">Important Habits Reminder</Label>                            <Switch
                                 id="habits-reminder"
                                 checked={habitsReminder}
                                 onCheckedChange={setHabitsReminder}
@@ -311,7 +302,7 @@ export default function NotificationsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className='font-headline'>Test Center</CardTitle>
-                    <CardDescription>Send a test notification to see how it looks.</CardDescription>
+                    <CardDescription>Send a test notification to see what the email would look like.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className='flex items-center gap-4'>
@@ -327,9 +318,9 @@ export default function NotificationsPage() {
                                 <SelectItem value="reflection">Reflection Reminder</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Button onClick={handleSendTest}>
+                        <Button onClick={handleSendTest} disabled={isSending}>
                             <Send className="mr-2 h-4 w-4"/>
-                            Send Test
+                            {isSending ? "Sending..." : "Send Test"}
                         </Button>
                     </div>
                 </CardContent>
@@ -339,3 +330,5 @@ export default function NotificationsPage() {
     </div>
   );
 }
+
+    
