@@ -55,26 +55,67 @@ type Phase = 'menstruation' | 'follicular' | 'ovulation' | 'luteal';
 
 const phaseDetails = {
   menstruation: {
-    title: "Menstruation Phase (Days 1-7 | Inner Winter)",
-    description: "Great time for setting and evaluating your goals. Work on solo projects and analytical tasks. Strategic thinking and set intentions for the next phase. Do big-picture work and self-assessment. Listen to your intuitions. Be gentle with yourself and highly reflective. Honor your body and get the sleep she wants.",
+    title: "Menstruation Phase (Day 1-7)",
+    description: `If fertilization does not occur - vaginal bleeding/shedding of the uterine lining.
+
+- Low estrogen & progesterone
+- Lowest energy
+- Warm foods
+- Eat foods high in iron
+- Drink lots of water
+- Gentle walks in nature
+- Time for Self Care
+- Journal & reflect
+- Prioritise sleep
+- Be extra kind to yourself`,
     color: "bg-[#f5c1cd] text-[#6d100f]",
     textColor: "text-[#6d100f]",
   },
   follicular: {
-    title: "Follicular Phase (Days 8-14 | Inner Spring)",
-    description: "Time to flex your creativity and brainstorm. Explore new opportunities and people. Be curious. Take an online course/Learn something new. Research. Get clear on your vision and intentions. Do something adventurous and take a chance on something new. Use your good mood and energy to help others.",
+    title: "Follicular Phase (Day 8-13)",
+    description: `Hormones released by your brain stimulate the production of an egg in your ovaries.
+
+- Rising estrogen & progesterone
+- Rising energy levels
+- Feeling refreshed
+- Light meals with fresh food
+- Eat raw fruit & veg
+- Eat fermented food, lean protein
+- CARDIO
+- Clear skin
+- Be creative
+- Breathwork`,
     color: "bg-[#e7a8b3] text-[#6d100f]",
     textColor: "text-[#6d100f]",
   },
   ovulation: {
-    title: "Ovulation Phase (Days 15-17 | Inner Summer)",
-    description: "Launch your new business. Pitch your ideas. Connect with your friends & family. Have hard conversations. Be seen and heard. Use your feminine energy. Attend conferences and network. Go out on a date. Engage in group work and be brave. Record YouTube or Podcast episodes. Have important conversations.",
+    title: "Ovulation Phase (Day 14-21)",
+    description: `The ovary releases a matured egg, which travels through the fallopian tubes to the uterus.
+
+- Estrogen & progesterone levels peak
+- High energy & brain power
+- Eat colourful fruits & veggies
+- Eat fibre & omega-3 foods
+- High impact workouts
+- High sex drive
+- Feeling confident
+- Take a risk & try new things
+- Be Social`,
     color: "bg-[#d88fa3] text-white",
     textColor: "text-[#d88fa3]",
   },
   luteal: {
-    title: "Luteal Phase (Days 18-28 | Inner Autumn)",
-    description: "Avoid big projects, tasks, and presentation. Focus on detail-oriented or repetitive task. Deep dive into your finances. Fully focus on your self-care and alone time. Prioritize admin tasks that have been ignored all month. Celebrate your wins. Flex your boundaries and say NO. Your anxiety will be high so do calming activities and give yourself grace.",
+    title: "Luteal Phase (Day 22-28)",
+    description: `The Corpus luteum (ovarian cells) stays active or dies. Dependant on fertilization. Progesterone levels drop... (unless you get pregnant)
+
+- A significant drop in energy & productivity
+- Eat regular balanced meals
+- Eat complex carbs & fats
+- Reduce added sugars, caffeine & dairy
+- Do yoga & pilates
+- Be gentle to yourself
+- PMS - mood swings, sugar cravings, bloated
+- Take time to reflect & focus on simple things`,
     color: "bg-[#c5768f] text-white",
     textColor: "text-[#c5768f]",
   },
@@ -239,7 +280,7 @@ export default function CycleTrackerPage() {
     const dateKey = format(selectedDay, 'yyyy-MM-dd');
     const dayDocRef = doc(cycleCollection, dateKey);
     
-    setDocumentNonBlocking(dayDocRef, { flow }, { merge: true });
+    setDocumentNonBlocking(dayDocRef, { flow, id: dateKey }, { merge: true });
 
     toast({
       title: 'Flow Updated',
@@ -261,9 +302,9 @@ export default function CycleTrackerPage() {
   };
   
   const handleRemoveNote = (noteId: string) => {
-      if (!cycleCollection) return;
+      if (!cycleCollection || !user) return;
       const dateKey = format(selectedDay, 'yyyy-MM-dd');
-      const noteDocRef = doc(firestore, `users/${user!.uid}/cycles/${dateKey}/notes/${noteId}`);
+      const noteDocRef = doc(firestore, `users/${user.uid}/cycles/${dateKey}/notes/${noteId}`);
       deleteDocumentNonBlocking(noteDocRef);
   }
 
@@ -367,5 +408,3 @@ export default function CycleTrackerPage() {
     </div>
   );
 }
-
-    
