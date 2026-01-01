@@ -45,6 +45,7 @@ type DailyPlan = {
   priorities: Priority[];
   schedule: Record<string, ScheduleItem>;
   reflection: string;
+  gratitude: string;
   habits: Record<string, boolean>;
 };
 
@@ -115,6 +116,7 @@ export function DailyPlanClient() {
       ],
       schedule: hours.reduce((acc, hour) => ({...acc, [hour]: { task: '', priority: 'Medium', notes: '' }}), {}),
       reflection: "",
+      gratitude: "",
       habits: dailyHabits.reduce((acc, habit) => ({...acc, [habit]: false}), {}),
     };
   };
@@ -147,6 +149,10 @@ export function DailyPlanClient() {
 
   const handleReflectionChange = (date: Date, value: string) => {
     updatePlanForDay(date, { reflection: value });
+  }
+
+  const handleGratitudeChange = (date: Date, value: string) => {
+    updatePlanForDay(date, { gratitude: value });
   }
   
   const handleHabitToggle = (date: Date, habit: string) => {
@@ -265,14 +271,24 @@ export function DailyPlanClient() {
                                 })}
                             </CardContent>
                         </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>End-of-Day Reflection</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Textarea rows={4} placeholder="How did today go? What did you learn?" value={plan.reflection} onChange={e => handleReflectionChange(day, e.target.value)} />
-                            </CardContent>
-                        </Card>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Gratitude</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Textarea rows={4} placeholder="What are you grateful for today?" value={plan.gratitude} onChange={e => handleGratitudeChange(day, e.target.value)} />
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>End-of-Day Reflection</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Textarea rows={4} placeholder="How did today go? What did you learn?" value={plan.reflection} onChange={e => handleReflectionChange(day, e.target.value)} />
+                                </CardContent>
+                            </Card>
+                         </div>
                     </div>
                 </div>
               </div>
@@ -285,3 +301,5 @@ export function DailyPlanClient() {
     </div>
   );
 }
+
+    
