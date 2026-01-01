@@ -74,33 +74,33 @@ body {
   }
   
   .theme-rose-gold {
-    --background: 39 100% 97%;
-    --foreground: 20 14.3% 4.1%;
-    --card: 39 70% 94%;
-    --card-foreground: 20 14.3% 4.1%;
-    --popover: 39 70% 94%;
-    --popover-foreground: 20 14.3% 4.1%;
-    --primary: 347 77% 36%;
-    --primary-foreground: 352 56% 93%;
-    --secondary: 350 70% 88%;
-    --secondary-foreground: 347 77% 15%;
-    --muted: 350 50% 91%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --accent: 30 46% 85%;
-    --accent-foreground: 24 9.8% 10%;
+    --background: 351 27% 96%; /* Petal Mist: #FAE5E7 */
+    --foreground: 1 81% 14%; /* Darker part of Red Wine for text */
+    --card: 344 33% 94%; /* Blushing Bride #F5C1CD slightly muted */
+    --card-foreground: 1 81% 14%;
+    --popover: 344 33% 92%;
+    --popover-foreground: 1 81% 14%;
+    --primary: 1 81% 24%; /* Red Wine: #6D100F */
+    --primary-foreground: 351 27% 96%; /* Petal Mist */
+    --secondary: 19 59% 84%; /* Rose Gold: #DEAD9D */
+    --secondary-foreground: 1 81% 14%;
+    --muted: 344 33% 90%;
+    --muted-foreground: 1 81% 20%;
+    --accent: 19 59% 78%; /* Lighter Rose Gold */
+    --accent-foreground: 1 81% 14%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 60 9.1% 97.8%;
-    --border: 352 30% 80%;
-    --input: 352 30% 85%;
-    --ring: 347 77% 36%;
-    --sidebar-background: 39 80% 96%;
-    --sidebar-foreground: 347 50% 20%;
-    --sidebar-primary: 347 77% 36%;
-    --sidebar-primary-foreground: 352 56% 93%;
-    --sidebar-accent: 39 50% 90%;
-    --sidebar-accent-foreground: 347 77% 15%;
-    --sidebar-border: 352 30% 85%;
-    --sidebar-ring: 347 77% 24%;
+    --border: 344 33% 88%;
+    --input: 344 33% 90%;
+    --ring: 1 81% 24%;
+    --sidebar-background: 351 27% 95%;
+    --sidebar-foreground: 1 81% 16%;
+    --sidebar-primary: 1 81% 24%;
+    --sidebar-primary-foreground: 351 27% 96%;
+    --sidebar-accent: 19 59% 84%;
+    --sidebar-accent-foreground: 1 81% 14%;
+    --sidebar-border: 344 33% 88%;
+    --sidebar-ring: 1 81% 24%;
   }
 
   .theme-black-gold {
