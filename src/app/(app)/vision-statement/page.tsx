@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { analyzeGoal } from "./actions"
 import { Sparkles } from "lucide-react"
+import { useFirebase, useDoc, useMemoFirebase } from "@/firebase"
+import { doc } from "firebase/firestore"
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { VisionStatement } from "@/lib/types"
 
 const initialState = {
     isSmart: false,
@@ -21,9 +25,24 @@ const initialState = {
 };
 
 export default function VisionStatementPage() {
-  const [goal, setGoal] = React.useState("")
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
   const [state, formAction] = useFormState(analyzeGoal, initialState);
+
+  const goalDocRef = useMemoFirebase(() => {
+      if (!user) return null;
+      return doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
+  }, [firestore, user]);
+
+  const { data: goalData, isLoading } = useDoc<VisionStatement>(goalDocRef);
+  
+  const [goal, setGoal] = React.useState("")
+  React.useEffect(() => {
+    if(goalData) {
+        setGoal(goalData.goalText || "");
+    }
+  }, [goalData]);
+
 
   const handleLockGoal = () => {
     if (!goal) {
@@ -34,10 +53,13 @@ export default function VisionStatementPage() {
         })
         return;
     }
-    // Save to localStorage
-    localStorage.setItem("bigGoal", goal);
+    if(goalDocRef) {
+        setDocumentNonBlocking(goalDocRef, {
+            goalText: goal,
+            sessionID: 'default'
+        }, { merge: true });
+    }
 
-    console.log("12-Month Goal:", goal)
     toast({
         title: "Goal Locked!",
         description: "Your first big goal is set. You've got this!"

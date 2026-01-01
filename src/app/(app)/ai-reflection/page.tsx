@@ -17,6 +17,8 @@ import { Sparkles, Calendar as CalendarIcon, Copy, History } from "lucide-react"
 import { DatePickerWithRange } from "@/components/ui/datepicker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 const initialState: ReflectionState = {
   summaryReflection: null,
@@ -35,6 +37,7 @@ type PastReflection = {
 export default function AiReflectionPage() {
   const [state, formAction] = useActionState(getAIReflection, initialState);
   const { toast } = useToast();
+  const { user, firestore } = useFirebase();
 
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: startOfWeek(new Date(), { weekStartsOn: 1 }),
@@ -65,27 +68,35 @@ export default function AiReflectionPage() {
             createdAt: new Date(),
         };
         setPastReflections(prev => [newReflection, ...prev]);
-        // Also update the selected reflection to show the newly generated one
         setSelectedPastReflection(newReflection);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   React.useEffect(() => {
-    // In a real app, this would be a more robust data fetching and aggregation strategy
-    const data: Record<string, unknown> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        try {
-            data[key] = JSON.parse(localStorage.getItem(key) || "");
-        } catch {
-            data[key] = localStorage.getItem(key);
+    const fetchAllData = async () => {
+        if (!user) return;
+        const data: Record<string, any> = {};
+        // This is a simplified example. A real app might have a more complex data aggregation strategy.
+        const collections = [
+            'actionPlanItems', 'successDefinitions', 'lifeVisionMilestones', 'fiveYearVisionPrompts',
+            'visionStatements', 'visionBoardImages', 'categoryGoals', 'travelMapPins', 'journalEntries',
+            'dailyHabits', 'habitsToManage', 'monthlyGoals', 'weeklyPlans', 'dailyPlans', 'cycles'
+        ];
+        
+        for (const coll of collections) {
+            try {
+                const collRef = collection(firestore, `users/${user.uid}/sessions/default/${coll}`);
+                const snapshot = await getDocs(collRef);
+                data[coll] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (e) {
+                console.warn(`Could not fetch collection ${coll}:`, e);
+            }
         }
-      }
+        setAllData(JSON.stringify(data, null, 2));
     }
-    setAllData(JSON.stringify(data));
-  }, []);
+    fetchAllData();
+  }, [user, firestore]);
   
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -210,5 +221,3 @@ export default function AiReflectionPage() {
     </div>
   );
 }
-
-    

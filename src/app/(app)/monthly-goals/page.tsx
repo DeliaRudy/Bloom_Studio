@@ -15,51 +15,73 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Target } from 'lucide-react';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { VisionStatement, MonthlyGoal } from '@/lib/types';
+import { format } from 'date-fns';
 
 export default function MonthlyGoalsPage() {
-  const [bigGoal, setBigGoal] = React.useState('');
-  const [monthlyGoals, setMonthlyGoals] = React.useState<string[]>(
-    Array(12).fill('')
-  );
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
+  const currentYear = new Date().getFullYear();
 
+  const bigGoalDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
+  }, [user, firestore]);
+  const { data: bigGoalData } = useDoc<VisionStatement>(bigGoalDocRef);
+  const bigGoal = bigGoalData?.goalText || '';
+
+  const months = React.useMemo(() => [
+    'January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ], []);
+
+  const [monthlyGoals, setMonthlyGoals] = React.useState<Record<string, string>>(
+    months.reduce((acc, _, i) => {
+        acc[format(new Date(currentYear, i), 'yyyy-MM')] = '';
+        return acc;
+    }, {} as Record<string, string>)
+  );
+
+  // This effect will fetch all 12 monthly goal documents for the year
   React.useEffect(() => {
-    const savedBigGoal = localStorage.getItem('bigGoal');
-    if (savedBigGoal) {
-      setBigGoal(savedBigGoal);
-    }
-    const savedMonthlyGoals = localStorage.getItem('monthlyGoals');
-    if (savedMonthlyGoals) {
-      const parsedGoals = JSON.parse(savedMonthlyGoals);
-      if (Array.isArray(parsedGoals)) {
-        const fullList = Array(12).fill('');
-        parsedGoals.forEach((g, i) => {
-          if (i < 12) fullList[i] = g;
-        });
-        setMonthlyGoals(fullList);
+      if (!user) return;
+      const fetchGoals = async () => {
+          const goals: Record<string, string> = {};
+          for (let i = 0; i < 12; i++) {
+              const monthId = format(new Date(currentYear, i), 'yyyy-MM');
+              const docRef = doc(firestore, `users/${user.uid}/sessions/default/monthlyGoals`, monthId);
+              // In a real app you might use getDocs with a query, but for simplicity we fetch one by one
+              const docSnap = await doc(firestore, docRef.path).get();
+              if (docSnap.exists()) {
+                  goals[monthId] = (docSnap.data() as MonthlyGoal).bigGoal || '';
+              } else {
+                  goals[monthId] = '';
+              }
+          }
+          setMonthlyGoals(goals);
       }
-    }
-  }, []);
+      fetchGoals();
+  }, [user, firestore, currentYear]);
 
-  const handleGoalChange = (index: number, value: string) => {
-    const newGoals = [...monthlyGoals];
-    newGoals[index] = value;
-    setMonthlyGoals(newGoals);
+
+  const handleGoalChange = (monthId: string, value: string) => {
+    if (!user) return;
+    const newGoals = {...monthlyGoals, [monthId]: value };
+    setMonthlyGoals(newGoals); // Optimistic update
+    
+    const goalDocRef = doc(firestore, `users/${user.uid}/sessions/default/monthlyGoals`, monthId);
+    setDocumentNonBlocking(goalDocRef, { bigGoal: value, id: monthId, sessionID: 'default' }, { merge: true });
   };
 
   const handleSave = () => {
-    localStorage.setItem('monthlyGoals', JSON.stringify(monthlyGoals));
-    console.log('Saving Monthly Goals:', monthlyGoals);
     toast({
       title: 'Monthly Goals Saved',
       description: 'Your goals for the year have been updated.',
     });
   };
-
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June', 
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
 
   return (
     <div>
@@ -93,20 +115,23 @@ export default function MonthlyGoalsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          {monthlyGoals.map((goal, index) => (
-            <div key={index} className="grid grid-cols-[auto_1fr] items-center gap-4">
-              <Label htmlFor={`month-${index + 1}`} className="font-bold text-muted-foreground w-24">
-                {months[index]}
-              </Label>
-              <Input
-                id={`month-${index + 1}`}
-                type="text"
-                placeholder={`Goal for ${months[index]}...`}
-                value={goal}
-                onChange={(e) => handleGoalChange(index, e.target.value)}
-              />
-            </div>
-          ))}
+          {months.map((month, index) => {
+              const monthId = format(new Date(currentYear, index), 'yyyy-MM');
+              return (
+                <div key={index} className="grid grid-cols-[auto_1fr] items-center gap-4">
+                <Label htmlFor={`month-${index + 1}`} className="font-bold text-muted-foreground w-24">
+                    {months[index]}
+                </Label>
+                <Input
+                    id={`month-${index + 1}`}
+                    type="text"
+                    placeholder={`Goal for ${months[index]}...`}
+                    value={monthlyGoals[monthId] || ''}
+                    onChange={(e) => handleGoalChange(monthId, e.target.value)}
+                />
+                </div>
+              )
+          })}
         </CardContent>
       </Card>
 
@@ -118,5 +143,3 @@ export default function MonthlyGoalsPage() {
     </div>
   );
 }
-
-    

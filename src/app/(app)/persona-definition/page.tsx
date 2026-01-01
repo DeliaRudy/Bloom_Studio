@@ -9,54 +9,102 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import * as React from "react";
 import { Label } from "@/components/ui/label";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc, addDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { JournalEntry } from "@/lib/types";
 
 type Trait = {
+    id: string;
     word: string;
-    meaning: string;
+    meaningId?: string;
+    meaning?: string;
 };
 
 export default function PersonaDefinitionPage() {
-    const [reasons, setReasons] = React.useState(Array(5).fill(""));
-    const [traits, setTraits] = React.useState<Trait[]>(Array(5).fill({ word: "", meaning: "" }));
-    const [philosophies, setPhilosophies] = React.useState("");
+    const { firestore, user } = useFirebase();
     const { toast } = useToast();
 
-    React.useEffect(() => {
-        const savedReasons = localStorage.getItem("personaWhy");
-        if (savedReasons) {
-            const parsed = JSON.parse(savedReasons);
-            const fullList = Array(5).fill("");
-            parsed.forEach((r: string, i: number) => {
-                if(i < 5) fullList[i] = r;
-            });
-            setReasons(fullList);
+    const journalCollection = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(firestore, `users/${user.uid}/sessions/default/journalEntries`);
+    }, [firestore, user]);
+
+    const { data: journalData, isLoading } = useCollection<JournalEntry>(journalCollection);
+
+    const reasons = React.useMemo(() => journalData?.filter(j => j.entryType === 'reason') || [], [journalData]);
+    const philosophies = React.useMemo(() => journalData?.find(j => j.entryType === 'philosophy')?.text || "", [journalData]);
+    
+    const traits = React.useMemo(() => {
+        const words = journalData?.filter(j => j.entryType === 'trait_word') || [];
+        const meanings = journalData?.filter(j => j.entryType === 'trait_meaning') || [];
+
+        return words.map(word => ({
+            id: word.id,
+            word: word.text,
+            meaningId: meanings.find(m => m.relatedId === word.id)?.id,
+            meaning: meanings.find(m => m.relatedId === word.id)?.text || ''
+        }));
+    }, [journalData]);
+
+
+    const handleReasonChange = (entry: Partial<JournalEntry>, value: string) => {
+        if (!journalCollection) return;
+        if (entry.id) {
+            const docRef = doc(journalCollection, entry.id);
+            if(value.trim() === "") deleteDocumentNonBlocking(docRef);
+            else updateDocumentNonBlocking(docRef, { text: value });
+        } else if (value.trim() !== "") {
+            addDocumentNonBlocking(journalCollection, { text: value, entryType: 'reason', sessionID: 'default' });
         }
-    }, []);
-
-    const handleReasonChange = (index: number, value: string) => {
-        const newReasons = [...reasons];
-        newReasons[index] = value;
-        setReasons(newReasons);
     };
 
-    const handleTraitChange = (index: number, field: keyof Trait, value: string) => {
-        const newTraits = [...traits];
-        newTraits[index] = { ...newTraits[index], [field]: value };
-        setTraits(newTraits);
-    };
+    const handleTraitWordChange = (entry: Partial<Trait>, value: string) => {
+        if (!journalCollection) return;
+        if(entry.id) {
+            const docRef = doc(journalCollection, entry.id);
+            if(value.trim() === "") {
+                if(entry.meaningId) deleteDocumentNonBlocking(doc(journalCollection, entry.meaningId));
+                deleteDocumentNonBlocking(docRef);
+            }
+            else updateDocumentNonBlocking(docRef, { text: value });
+        } else if (value.trim() !== "") {
+            addDocumentNonBlocking(journalCollection, { text: value, entryType: 'trait_word', sessionID: 'default' });
+        }
+    }
+    
+    const handleTraitMeaningChange = (wordEntry: Trait, value: string) => {
+        if (!journalCollection || !wordEntry.id) return;
+        if(wordEntry.meaningId) {
+             const docRef = doc(journalCollection, wordEntry.meaningId);
+             if(value.trim() === "") deleteDocumentNonBlocking(docRef);
+             else updateDocumentNonBlocking(docRef, { text: value });
+        } else if (value.trim() !== "") {
+            addDocumentNonBlocking(journalCollection, { text: value, entryType: 'trait_meaning', sessionID: 'default', relatedId: wordEntry.id });
+        }
+    }
+    
+    const handlePhilosophyChange = (value: string) => {
+        if (!journalCollection) return;
+        const philosophyDoc = journalData?.find(j => j.entryType === 'philosophy');
+        if (philosophyDoc) {
+             const docRef = doc(journalCollection, philosophyDoc.id);
+             updateDocumentNonBlocking(docRef, { text: value });
+        } else {
+            addDocumentNonBlocking(journalCollection, { text: value, entryType: 'philosophy', sessionID: 'default' });
+        }
+    }
+
 
     const handleSave = () => {
-        const filteredReasons = reasons.filter(r => r);
-        localStorage.setItem("personaWhy", JSON.stringify(filteredReasons));
-        
-        console.log("Saving Persona Definition (Why):", filteredReasons);
-        console.log("Saving Persona Definition (Who):", traits.filter(t => t.word));
-        console.log("Saving Personal Philosophies:", philosophies);
         toast({
             title: "Your Persona has been saved!",
             description: "Connecting with your reasons and traits is a huge step.",
         });
     }
+
+    const paddedReasons = [...reasons, ...Array(5 - reasons.length).fill({id: '', text: ''})].slice(0,5);
+    const paddedTraits = [...traits, ...Array(5 - traits.length).fill({id: '', word: '', meaning: ''})].slice(0,5);
 
     return (
         <div>
@@ -70,13 +118,13 @@ export default function PersonaDefinitionPage() {
                     <CardDescription>Write at least 5 reasons WHY you want to achieve your Ambition, Vision and Goals.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {reasons.map((reason, index) => (
-                         <div key={index} className="flex items-center gap-4">
+                    {paddedReasons.map((reason, index) => (
+                         <div key={reason.id || index} className="flex items-center gap-4">
                             <span className="text-lg font-semibold text-muted-foreground">{index + 1}.</span>
                             <Input 
                                 type="text"
-                                value={reason}
-                                onChange={(e) => handleReasonChange(index, e.target.value)}
+                                defaultValue={reason.text}
+                                onBlur={(e) => handleReasonChange(reason, e.target.value)}
                                 placeholder="Enter your reason here..."
                             />
                         </div>
@@ -96,21 +144,21 @@ export default function PersonaDefinitionPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {traits.map((trait, index) => (
-                         <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    {paddedTraits.map((trait, index) => (
+                         <div key={trait.id || index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                             <div className="flex items-center gap-4 md:col-span-1">
                                <span className="text-lg font-semibold text-muted-foreground">{index + 1}.</span>
                                 <Input 
                                     type="text"
-                                    value={trait.word}
-                                    onChange={(e) => handleTraitChange(index, 'word', e.target.value)}
+                                    defaultValue={trait.word}
+                                    onBlur={(e) => handleTraitWordChange(trait, e.target.value)}
                                     placeholder="Trait (e.g., Brave)"
                                 />
                             </div>
                             <div className="md:col-span-2">
                                 <Textarea 
-                                    value={trait.meaning}
-                                    onChange={(e) => handleTraitChange(index, 'meaning', e.target.value)}
+                                    defaultValue={trait.meaning}
+                                    onBlur={(e) => handleTraitMeaningChange(trait, e.target.value)}
                                     placeholder="Explain what this word means to you..."
                                     rows={2}
                                 />
@@ -133,8 +181,8 @@ export default function PersonaDefinitionPage() {
                         <Textarea
                             id="personal-philosophies"
                             placeholder="Write your philosophies here..."
-                            value={philosophies}
-                            onChange={(e) => setPhilosophies(e.target.value)}
+                            defaultValue={philosophies}
+                            onBlur={(e) => handlePhilosophyChange(e.target.value)}
                             className="resize-none h-48 leading-loose bg-transparent"
                              style={{
                                 backgroundImage: 'repeating-linear-gradient(to bottom, hsl(var(--border)) 0 1px, transparent 1px 2rem)',
@@ -156,5 +204,3 @@ export default function PersonaDefinitionPage() {
         </div>
     );
 }
-
-    

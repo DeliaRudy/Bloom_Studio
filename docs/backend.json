@@ -322,30 +322,19 @@
         "tag"
       ]
     },
-    "PurposeReason": {
+    "JournalEntry": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "PurposeReason",
+      "title": "JournalEntry",
       "type": "object",
-      "description": "Stores a single reason for achieving goals.",
+      "description": "Stores various types of user text entries like affirmations, reasons, etc.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the purpose reason."
-        },
-        "sessionID": {
-          "type": "string",
-          "description": "Reference to Session. (Relationship: Session 1:N PurposeReason)"
-        },
-        "reasonText": {
-          "type": "string",
-          "description": "The text of the reason."
-        }
+        "id": { "type": "string" },
+        "sessionID": { "type": "string" },
+        "entryType": { "type": "string", "enum": ["affirmation", "gratitude", "reason", "philosophy", "trait_word", "trait_meaning"] },
+        "text": { "type": "string" },
+        "relatedId": { "type": "string", "description": "For trait_meaning, this links to the trait_word entry's ID."}
       },
-      "required": [
-        "id",
-        "sessionID",
-        "reasonText"
-      ]
+      "required": ["id", "sessionID", "entryType", "text"]
     },
      "CycleDay": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -397,6 +386,78 @@
         }
       },
       "required": ["id", "text", "createdAt"]
+    },
+    "DailyHabit": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DailyHabit",
+      "type": "object",
+      "description": "A single daily habit defined by the user.",
+      "properties": {
+        "id": { "type": "string" },
+        "sessionID": { "type": "string" },
+        "text": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "sessionID", "text", "order"]
+    },
+    "HabitToManage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "HabitToManage",
+      "type": "object",
+      "description": "A habit the user wants to start or stop.",
+      "properties": {
+        "id": { "type": "string" },
+        "sessionID": { "type": "string" },
+        "text": { "type": "string" },
+        "type": { "type": "string", "enum": ["start", "stop"] }
+      },
+      "required": ["id", "sessionID", "text", "type"]
+    },
+    "MonthlyGoal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MonthlyGoal",
+      "type": "object",
+      "description": "Goals for a specific month.",
+      "properties": {
+        "id": { "type": "string", "description": "ID in format YYYY-MM" },
+        "sessionID": { "type": "string" },
+        "goals": { "type": "array", "items": { "type": "string" } },
+        "bigGoal": { "type": "string" }
+      },
+      "required": ["id", "sessionID"]
+    },
+    "WeeklyPlan": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "WeeklyPlan",
+        "type": "object",
+        "description": "A user's plan for a specific week.",
+        "properties": {
+            "id": { "type": "string", "description": "ID in format YYYY-WW (e.g., 2024-28)" },
+            "sessionID": { "type": "string" },
+            "bigGoal": { "type": "string" },
+            "weeklyGoals": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "priority": { "type": "boolean" } } } },
+            "affirmations": { "type": "array", "items": { "type": "string" } },
+            "peopleToConnect": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "connected": { "type": "boolean" } } } },
+            "schedule": { "type": "object" }
+        },
+        "required": ["id", "sessionID"]
+    },
+    "DailyPlan": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "DailyPlan",
+        "type": "object",
+        "description": "A user's plan for a specific day.",
+        "properties": {
+            "id": { "type": "string", "description": "ID in format YYYY-MM-DD" },
+            "sessionID": { "type": "string" },
+            "todaysBigGoal": { "type": "string" },
+            "priorities": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "completed": { "type": "boolean" } } } },
+            "schedule": { "type": "object" },
+            "habits": { "type": "object" },
+            "gratitude": { "type": "string" },
+            "reflection": { "type": "string" }
+        },
+        "required": ["id", "sessionID"]
     },
     "Mail": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -702,27 +763,51 @@
         }
       },
       {
-        "path": "/users/{userId}/sessions/{sessionId}/purposeReasons/{purposeReasonId}",
+        "path": "/users/{userId}/sessions/{sessionId}/journalEntries/{journalEntryId}",
         "definition": {
-          "entityName": "PurposeReason",
-          "schema": {
-            "$ref": "#/backend/entities/PurposeReason"
-          },
-          "description": "Stores a single reason for achieving goals. Nested under session.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier for the user account."
-            },
-            {
-              "name": "sessionId",
-              "description": "Unique identifier for the session."
-            },
-            {
-              "name": "purposeReasonId",
-              "description": "Unique identifier for the purpose reason."
-            }
-          ]
+          "entityName": "JournalEntry",
+          "schema": { "$ref": "#/backend/entities/JournalEntry" },
+          "description": "Stores various user text entries."
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/dailyHabits/{dailyHabitId}",
+        "definition": {
+          "entityName": "DailyHabit",
+          "schema": { "$ref": "#/backend/entities/DailyHabit" },
+          "description": "Stores user-defined daily habits."
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/habitsToManage/{habitToManageId}",
+        "definition": {
+          "entityName": "HabitToManage",
+          "schema": { "$ref": "#/backend/entities/HabitToManage" },
+          "description": "Stores habits to start or stop."
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/monthlyGoals/{monthlyGoalId}",
+        "definition": {
+          "entityName": "MonthlyGoal",
+          "schema": { "$ref": "#/backend/entities/MonthlyGoal" },
+          "description": "Stores monthly goals."
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/weeklyPlans/{weeklyPlanId}",
+        "definition": {
+          "entityName": "WeeklyPlan",
+          "schema": { "$ref": "#/backend/entities/WeeklyPlan" },
+          "description": "Stores weekly plans."
+        }
+      },
+      {
+        "path": "/users/{userId}/sessions/{sessionId}/dailyPlans/{dailyPlanId}",
+        "definition": {
+          "entityName": "DailyPlan",
+          "schema": { "$ref": "#/backend/entities/DailyPlan" },
+          "description": "Stores daily plans."
         }
       },
       {

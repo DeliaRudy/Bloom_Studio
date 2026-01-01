@@ -21,6 +21,7 @@ import {
   startOfWeek,
   addDays,
   subDays,
+  getWeek,
 } from 'date-fns';
 import { BookOpenCheck, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,28 +36,11 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CycleSyncBanner } from '@/components/cycle-sync-banner';
+import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { DailyHabit, DailyPlan, VisionStatement, MonthlyGoal, WeeklyPlan } from '@/lib/types';
 
-
-type Priority = {
-  id: string;
-  text: string;
-  completed: boolean;
-};
-
-type ScheduleItem = {
-  task: string;
-  priority: 'High' | 'Medium' | 'Low';
-  notes: string;
-};
-
-type DailyPlan = {
-  priorities: Priority[];
-  schedule: Record<string, ScheduleItem>;
-  reflection: string;
-  gratitude: string;
-  habits: Record<string, boolean>;
-  todaysBigGoal: string;
-};
 
 const hours = Array.from({ length: 15 }, (_, i) =>
   `${(i + 6).toString().padStart(2, '0')}:00`
@@ -64,49 +48,55 @@ const hours = Array.from({ length: 15 }, (_, i) =>
 
 export function DailyPlanClient() {
   const [currentDay, setCurrentDay] = React.useState(new Date());
-  const [dailyPlans, setDailyPlans] = React.useState<Record<string, DailyPlan>>(
-    {}
-  );
-  const [dailyHabits, setDailyHabits] = React.useState<string[]>([]);
   const { toast } = useToast();
+  const { user, firestore } = useFirebase();
 
-  const [fiveYearVision, setFiveYearVision] = React.useState('');
-  const [bigGoalYear, setBigGoalYear] = React.useState('');
-  const [bigGoalMonth, setBigGoalMonth] = React.useState('');
-  const [bigGoalWeek, setBigGoalWeek] = React.useState('');
+  const dateString = format(currentDay, 'yyyy-MM-dd');
+  const monthString = format(currentDay, 'yyyy-MM');
+  const weekString = format(currentDay, 'yyyy-') + getWeek(currentDay, { weekStartsOn: 1 });
 
-  React.useEffect(() => {
-    // Load data from local storage
-    const savedPlans = localStorage.getItem(
-      `dailyPlans${currentDay.getFullYear()}`
-    );
-    if (savedPlans) {
-      setDailyPlans(JSON.parse(savedPlans));
-    }
-    const savedHabits = localStorage.getItem('dailyHabits');
-    if (savedHabits) {
-      const parsedHabits = JSON.parse(savedHabits);
-      setDailyHabits(parsedHabits.filter((h: string) => h && h.trim() !== ''));
-    }
 
-    const saved5YearVision = localStorage.getItem('5YearVision');
-    setFiveYearVision(saved5YearVision || 'Not set yet');
+  const dailyPlanDocRef = useMemoFirebase(() => 
+    user ? doc(firestore, `users/${user.uid}/sessions/default/dailyPlans`, dateString) : null
+  , [user, firestore, dateString]);
+  const { data: planForCurrentDay, isLoading: isPlanLoading } = useDoc<DailyPlan>(dailyPlanDocRef);
 
-    const savedBigGoalYear = localStorage.getItem('bigGoal');
-    setBigGoalYear(savedBigGoalYear || 'Not set yet');
+  const dailyHabitsCollectionRef = useMemoFirebase(() => 
+      user ? collection(firestore, `users/${user.uid}/sessions/default/dailyHabits`) : null
+  , [user, firestore]);
+  const { data: dailyHabitsData, isLoading: areHabitsLoading } = useCollection<DailyHabit>(dailyHabitsCollectionRef);
+  const dailyHabits = React.useMemo(() => dailyHabitsData?.sort((a,b) => a.order - b.order).map(h => h.text).filter(h => h) || [], [dailyHabitsData]);
 
-    const monthlyGoalsData = localStorage.getItem('monthlyBigGoal');
-    setBigGoalMonth(monthlyGoalsData || 'Not set yet');
+  const fiveYearVisionDocRef = useMemoFirebase(() => 
+      user ? doc(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`, 'visionStatement') : null
+  , [user, firestore]);
+  const { data: fiveYearVisionData } = useDoc<any>(fiveYearVisionDocRef);
+  const fiveYearVision = fiveYearVisionData?.responseText || 'Not set yet';
 
-    const weekKey = format(startOfWeek(currentDay, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const savedWeeklyGoals = JSON.parse(localStorage.getItem('weeklyGoals') || '{}');
-    setBigGoalWeek(savedWeeklyGoals[weekKey]?.bigGoal || 'Not set yet');
-  }, [currentDay]);
+  const bigGoalYearDocRef = useMemoFirebase(() => 
+      user ? doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal') : null
+  , [user, firestore]);
+  const { data: bigGoalYearData } = useDoc<VisionStatement>(bigGoalYearDocRef);
+  const bigGoalYear = bigGoalYearData?.goalText || 'Not set yet';
 
-  const getPlanForDay = (date: Date): DailyPlan => {
-    const dateString = format(date, 'yyyy-MM-dd');
+  const bigGoalMonthDocRef = useMemoFirebase(() =>
+    user ? doc(firestore, `users/${user.uid}/sessions/default/monthlyGoals`, monthString) : null
+  , [user, firestore, monthString]);
+  const { data: bigGoalMonthData } = useDoc<MonthlyGoal>(bigGoalMonthDocRef);
+  const bigGoalMonth = bigGoalMonthData?.bigGoal || 'Not set yet';
+
+  const bigGoalWeekDocRef = useMemoFirebase(() =>
+    user ? doc(firestore, `users/${user.uid}/sessions/default/weeklyPlans`, weekString) : null
+  , [user, firestore, weekString]);
+  const { data: bigGoalWeekData } = useDoc<WeeklyPlan>(bigGoalWeekDocRef);
+  const bigGoalWeek = bigGoalWeekData?.bigGoal || 'Not set yet';
+  
+
+  const getPlanForDay = (): DailyPlan => {
     return (
-      dailyPlans[dateString] || {
+      planForCurrentDay || {
+        id: dateString,
+        sessionID: 'default',
         priorities: [
           { id: '1', text: '', completed: false },
           { id: '2', text: '', completed: false },
@@ -129,73 +119,61 @@ export function DailyPlanClient() {
       }
     );
   };
+  
+  const currentPlan = getPlanForDay();
 
-  const updatePlanForDay = (date: Date, newPlan: Partial<DailyPlan>) => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    const existingPlan = getPlanForDay(date);
-    setDailyPlans((prev) => ({
-      ...prev,
-      [dateString]: { ...existingPlan, ...newPlan },
-    }));
+  const updatePlanForDay = (newPlan: Partial<DailyPlan>) => {
+      if (!dailyPlanDocRef) return;
+      setDocumentNonBlocking(dailyPlanDocRef, newPlan, { merge: true });
   };
 
   const handleSave = () => {
-    localStorage.setItem(
-      `dailyPlans${currentDay.getFullYear()}`,
-      JSON.stringify(dailyPlans)
-    );
     toast({
       title: 'Daily Plans Saved!',
-      description: `Your plans for ${currentDay.getFullYear()} have been saved locally.`,
+      description: `Your plans for have been saved to the database.`,
     });
   };
 
   const handlePriorityChange = (
-    date: Date,
     id: string,
     field: 'text' | 'completed',
     value: string | boolean
   ) => {
-    const plan = getPlanForDay(date);
-    const newPriorities = plan.priorities.map((p) => {
+    const newPriorities = currentPlan.priorities.map((p) => {
       if (p.id === id) {
         return { ...p, [field]: value };
       }
       return p;
     });
-    updatePlanForDay(date, { priorities: newPriorities });
+    updatePlanForDay({ priorities: newPriorities });
   };
 
   const handleScheduleChange = (
-    date: Date,
     hour: string,
     field: 'task' | 'priority' | 'notes',
     value: string
   ) => {
-    const plan = getPlanForDay(date);
     const newSchedule = {
-      ...plan.schedule,
-      [hour]: { ...plan.schedule[hour], [field]: value },
+      ...currentPlan.schedule,
+      [hour]: { ...currentPlan.schedule[hour], [field]: value },
     };
-    updatePlanForDay(date, { schedule: newSchedule });
+    updatePlanForDay({ schedule: newSchedule });
   };
 
   const handleGenericChange = (
-    date: Date,
     field: 'reflection' | 'gratitude' | 'todaysBigGoal',
     value: string
   ) => {
-    updatePlanForDay(date, { [field]: value });
+    updatePlanForDay({ [field]: value });
   };
 
-  const handleHabitToggle = (date: Date, habit: string) => {
-    const plan = getPlanForDay(date);
-    const newHabits = { ...plan.habits, [habit]: !plan.habits[habit] };
-    updatePlanForDay(date, { habits: newHabits });
+  const handleHabitToggle = (habit: string) => {
+    const newHabits = { ...currentPlan.habits, [habit]: !currentPlan.habits[habit] };
+    updatePlanForDay({ habits: newHabits });
   };
 
-  const planForCurrentDay = getPlanForDay(currentDay);
-  const completedHabits = Object.values(planForCurrentDay.habits).filter(
+
+  const completedHabits = Object.values(currentPlan.habits).filter(
     Boolean
   ).length;
   const totalHabits = dailyHabits.length;
@@ -310,10 +288,11 @@ export function DailyPlanClient() {
         <CardContent>
           <Textarea
             placeholder="Enter the most important result for today"
-            value={planForCurrentDay.todaysBigGoal}
-            onChange={(e) =>
-              handleGenericChange(currentDay, 'todaysBigGoal', e.target.value)
+            value={currentPlan.todaysBigGoal}
+            onBlur={(e) =>
+              handleGenericChange('todaysBigGoal', e.target.value)
             }
+            defaultValue={currentPlan.todaysBigGoal}
             rows={1}
           />
         </CardContent>
@@ -329,14 +308,13 @@ export function DailyPlanClient() {
               <CardTitle>Top 3 Priorities</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {planForCurrentDay.priorities.map((p) => (
+              {currentPlan.priorities.map((p) => (
                 <div key={p.id} className="flex items-center gap-3">
                   <Checkbox
                     id={`${currentDay.toISOString()}-${p.id}`}
                     checked={p.completed}
                     onCheckedChange={(checked) =>
                       handlePriorityChange(
-                        currentDay,
                         p.id,
                         'completed',
                         !!checked
@@ -344,10 +322,9 @@ export function DailyPlanClient() {
                     }
                   />
                   <Input
-                    value={p.text}
-                    onChange={(e) =>
+                    defaultValue={p.text}
+                    onBlur={(e) =>
                       handlePriorityChange(
-                        currentDay,
                         p.id,
                         'text',
                         e.target.value
@@ -376,19 +353,19 @@ export function DailyPlanClient() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {dailyHabits.length > 0 ? (
+              {areHabitsLoading ? <p>Loading habits...</p> : dailyHabits.length > 0 ? (
                 <div className="space-y-2">
                   {dailyHabits.map((habit) => (
                     <div
                       key={habit}
                       className="flex items-center gap-3 cursor-pointer rounded-md p-2 hover:bg-muted/50"
-                      onClick={() => handleHabitToggle(currentDay, habit)}
+                      onClick={() => handleHabitToggle(habit)}
                     >
-                      <Checkbox checked={planForCurrentDay.habits[habit]} />
+                      <Checkbox checked={currentPlan.habits[habit]} />
                       <span
                         className={cn(
                           'text-sm',
-                          planForCurrentDay.habits[habit] &&
+                          currentPlan.habits[habit] &&
                             'line-through text-muted-foreground'
                         )}
                       >
@@ -442,12 +419,11 @@ export function DailyPlanClient() {
                           {format(time, 'h:mm a')}
                         </Label>
                         <Input
-                          value={
-                            planForCurrentDay.schedule[hour]?.task || ''
+                          defaultValue={
+                            currentPlan.schedule[hour]?.task || ''
                           }
-                          onChange={(e) =>
+                          onBlur={(e) =>
                             handleScheduleChange(
-                              currentDay,
                               hour,
                               'task',
                               e.target.value
@@ -457,12 +433,11 @@ export function DailyPlanClient() {
                           className="bg-transparent border-0 border-b rounded-none"
                         />
                         <Input
-                          value={
-                            planForCurrentDay.schedule[hour]?.notes || ''
+                          defaultValue={
+                            currentPlan.schedule[hour]?.notes || ''
                           }
-                          onChange={(e) =>
+                          onBlur={(e) =>
                             handleScheduleChange(
-                              currentDay,
                               hour,
                               'notes',
                               e.target.value
@@ -473,14 +448,13 @@ export function DailyPlanClient() {
                         />
                         <Select
                           value={
-                            planForCurrentDay.schedule[hour]?.priority ||
+                            currentPlan.schedule[hour]?.priority ||
                             'Medium'
                           }
                           onValueChange={(
                             value: 'High' | 'Medium' | 'Low'
                           ) =>
                             handleScheduleChange(
-                              currentDay,
                               hour,
                               'priority',
                               value
@@ -512,10 +486,9 @@ export function DailyPlanClient() {
                 <Textarea
                   rows={4}
                   placeholder="What are you grateful for today?"
-                  value={planForCurrentDay.gratitude}
-                  onChange={(e) =>
+                  defaultValue={currentPlan.gratitude}
+                  onBlur={(e) =>
                     handleGenericChange(
-                      currentDay,
                       'gratitude',
                       e.target.value
                     )
@@ -531,10 +504,9 @@ export function DailyPlanClient() {
                 <Textarea
                   rows={4}
                   placeholder="How did today go? What did you learn?"
-                  value={planForCurrentDay.reflection}
-                  onChange={(e) =>
+                  defaultValue={currentPlan.reflection}
+                  onBlur={(e) =>
                     handleGenericChange(
-                      currentDay,
                       'reflection',
                       e.target.value
                     )

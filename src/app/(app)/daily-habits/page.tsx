@@ -7,41 +7,55 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Trash2 } from "lucide-react";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc, writeBatch } from "firebase/firestore";
+import { DailyHabit } from "@/lib/types";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const HABIT_COUNT = 20;
 
 export default function DailyHabitsPage() {
-  const [dailyHabits, setDailyHabits] = React.useState<string[]>(Array(HABIT_COUNT).fill(""));
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    const savedHabits = localStorage.getItem("dailyHabits");
-    if (savedHabits) {
-      const parsed = JSON.parse(savedHabits);
-      const fullList = Array(HABIT_COUNT).fill("");
-      parsed.forEach((h: string, i: number) => {
-        if(i < HABIT_COUNT) fullList[i] = h;
-      });
-      setDailyHabits(fullList);
-    }
-  }, []);
+  const habitsCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/sessions/default/dailyHabits`);
+  }, [firestore, user]);
+
+  const { data: habitsData, isLoading } = useCollection<DailyHabit>(habitsCollection);
+
+  const dailyHabits = React.useMemo(() => {
+    const habits = Array(HABIT_COUNT).fill(null).map((_, index) => {
+        const habit = habitsData?.find(h => h.order === index);
+        return habit || { id: `new-${index}`, text: "", order: index, sessionID: 'default' };
+    });
+    return habits;
+  }, [habitsData]);
 
   const handleHabitChange = (
     index: number,
     value: string,
   ) => {
-    const newList = [...dailyHabits];
-    newList[index] = value;
-    setDailyHabits(newList);
+    const habit = dailyHabits[index];
+    if (!habitsCollection) return;
+    
+    if (habit.id.startsWith('new-')) {
+        if(value.trim() !== "") {
+            addDocumentNonBlocking(habitsCollection, { text: value, order: index, sessionID: 'default' });
+        }
+    } else {
+        const docRef = doc(habitsCollection, habit.id);
+        if (value.trim() === "") {
+            deleteDocumentNonBlocking(docRef);
+        } else {
+            updateDocumentNonBlocking(docRef, { text: value });
+        }
+    }
   };
 
   const handleSave = () => {
-    // We save all entries, even empty ones, to preserve order.
-    // The filter will happen on the daily plan page.
-    localStorage.setItem("dailyHabits", JSON.stringify(dailyHabits));
-
-    console.log("Daily Habits:", dailyHabits.filter(h => h));
     toast({
       title: "Daily Habits Saved",
       description: "Your daily habits have been successfully saved.",
@@ -64,13 +78,13 @@ export default function DailyHabitsPage() {
           <CardDescription>List up to 20 habits to practice daily. These will appear in your Daily Plan.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {dailyHabits.map((habit, index) => (
-            <div key={index} className="flex items-center gap-3">
+          {isLoading ? <p>Loading habits...</p> : dailyHabits.map((habit, index) => (
+            <div key={habit.id || index} className="flex items-center gap-3">
               <span className="text-sm font-medium text-muted-foreground w-6 text-right">{index + 1}.</span>
               <Input
                 type="text"
-                value={habit}
-                onChange={(e) => handleHabitChange(index, e.target.value)}
+                defaultValue={habit.text}
+                onBlur={(e) => handleHabitChange(index, e.target.value)}
                 placeholder={`e.g., Meditate for 10 minutes`}
               />
             </div>

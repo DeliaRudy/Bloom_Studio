@@ -8,55 +8,60 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ListPlus, ListX } from "lucide-react";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc, addDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { HabitToManage } from "@/lib/types";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const HABIT_COUNT = 12;
 
 export default function HabitsPage() {
-  const [startHabits, setStartHabits] = React.useState<string[]>(Array(HABIT_COUNT).fill(""));
-  const [stopHabits, setStopHabits] = React.useState<string[]>(Array(HABIT_COUNT).fill(""));
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    const savedStartHabits = localStorage.getItem("startHabits");
-    if (savedStartHabits) {
-      const parsed = JSON.parse(savedStartHabits);
-      const fullList = Array(HABIT_COUNT).fill("");
-      parsed.forEach((h: string, i: number) => {
-        if(i < HABIT_COUNT) fullList[i] = h;
-      });
-      setStartHabits(fullList);
-    }
-    const savedStopHabits = localStorage.getItem("stopHabits");
-    if (savedStopHabits) {
-      const parsed = JSON.parse(savedStopHabits);
-      const fullList = Array(HABIT_COUNT).fill("");
-      parsed.forEach((h: string, i: number) => {
-        if(i < HABIT_COUNT) fullList[i] = h;
-      });
-      setStopHabits(fullList);
-    }
-  }, []);
+  const habitsCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/sessions/default/habitsToManage`);
+  }, [firestore, user]);
+
+  const { data: habitsData, isLoading } = useCollection<HabitToManage>(habitsCollection);
+
+  const startHabits = React.useMemo(() => {
+    const habits = habitsData?.filter(h => h.type === 'start') || [];
+    const padded = Array(HABIT_COUNT).fill({ id: '', text: '' });
+    habits.forEach((h, i) => { if (i < HABIT_COUNT) padded[i] = h; });
+    return padded;
+  }, [habitsData]);
+
+  const stopHabits = React.useMemo(() => {
+    const habits = habitsData?.filter(h => h.type === 'stop') || [];
+    const padded = Array(HABIT_COUNT).fill({ id: '', text: '' });
+    habits.forEach((h, i) => { if (i < HABIT_COUNT) padded[i] = h; });
+    return padded;
+  }, [habitsData]);
 
   const handleHabitChange = (
-    index: number,
+    habit: Partial<HabitToManage>,
     value: string,
-    list: string[],
-    setList: React.Dispatch<React.SetStateAction<string[]>>
+    type: 'start' | 'stop'
   ) => {
-    const newList = [...list];
-    newList[index] = value;
-    setList(newList);
+    if (!habitsCollection) return;
+
+    if (habit.id) { // Existing habit
+      const docRef = doc(habitsCollection, habit.id);
+      if (value.trim() === "") {
+        deleteDocumentNonBlocking(docRef);
+      } else {
+        updateDocumentNonBlocking(docRef, { text: value });
+      }
+    } else { // New habit
+      if (value.trim() !== "") {
+        addDocumentNonBlocking(habitsCollection, { text: value, type, sessionID: 'default' });
+      }
+    }
   };
 
   const handleSave = () => {
-    const filteredStartHabits = startHabits.filter(h => h);
-    const filteredStopHabits = stopHabits.filter(h => h);
-    
-    localStorage.setItem("startHabits", JSON.stringify(filteredStartHabits));
-    localStorage.setItem("stopHabits", JSON.stringify(filteredStopHabits));
-
-    console.log("Habits to Start:", filteredStartHabits);
-    console.log("Habits to Stop:", filteredStopHabits);
     toast({
       title: "Habits Saved",
       description: "Your new habits have been successfully saved.",
@@ -80,13 +85,13 @@ export default function HabitsPage() {
             <CardDescription>List up to 12 habits you want to cultivate this year.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {startHabits.map((habit, index) => (
-              <div key={index} className="flex items-center gap-3">
+             {isLoading ? <p>Loading...</p> : startHabits.map((habit, index) => (
+              <div key={habit.id || `start-${index}`} className="flex items-center gap-3">
                 <span className="text-sm font-medium text-muted-foreground w-6 text-right">{index + 1}.</span>
                 <Input
                   type="text"
-                  value={habit}
-                  onChange={(e) => handleHabitChange(index, e.target.value, startHabits, setStartHabits)}
+                  defaultValue={habit.text}
+                  onBlur={(e) => handleHabitChange(habit, e.target.value, 'start')}
                   placeholder="e.g., Read for 30 minutes every day"
                 />
               </div>
@@ -103,13 +108,13 @@ export default function HabitsPage() {
             <CardDescription>List up to 12 habits you want to break this year.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {stopHabits.map((habit, index) => (
-              <div key={index} className="flex items-center gap-3">
+            {isLoading ? <p>Loading...</p> : stopHabits.map((habit, index) => (
+              <div key={habit.id || `stop-${index}`} className="flex items-center gap-3">
                  <span className="text-sm font-medium text-muted-foreground w-6 text-right">{index + 1}.</span>
                 <Input
                   type="text"
-                  value={habit}
-                  onChange={(e) => handleHabitChange(index, e.target.value, stopHabits, setStopHabits)}
+                  defaultValue={habit.text}
+                  onBlur={(e) => handleHabitChange(habit, e.target.value, 'stop')}
                   placeholder="e.g., Stop scrolling social media after 9 PM"
                 />
               </div>
@@ -126,5 +131,3 @@ export default function HabitsPage() {
     </div>
   );
 }
-
-    

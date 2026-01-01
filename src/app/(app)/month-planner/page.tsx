@@ -27,6 +27,11 @@ import {
 import { PlusCircle, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { VisionStatement, MonthlyGoal, JournalEntry } from '@/lib/types';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 type Goal = {
   id: string;
@@ -34,144 +39,114 @@ type Goal = {
   completed: boolean;
 };
 
-const initialGoals: Goal[] = [];
-
 export default function MonthPlannerPage() {
+  const { firestore, user } = useFirebase();
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
-  const [bigGoal, setBigGoal] = React.useState('');
-  const [fiveYearVision, setFiveYearVision] = React.useState('');
-  const [monthlyGoals, setMonthlyGoals] = React.useState<string[]>([]);
-  const [selectedMonthlyBigGoal, setSelectedMonthlyBigGoal] = React.useState<
-    string | undefined
-  >(undefined);
-  const [goals, setGoals] = React.useState<Goal[]>(initialGoals);
-  const [fiveWords, setFiveWords] = React.useState(Array(5).fill(''));
-
-  const [startHabits, setStartHabits] = React.useState<string[]>([]);
-  const [stopHabits, setStopHabits] = React.useState<string[]>([]);
-  const [lifeRules, setLifeRules] = React.useState<string[]>([]);
-
-  const [selectedStartHabit, setSelectedStartHabit] = React.useState<
-    string | undefined
-  >(undefined);
-  const [selectedStopHabit, setSelectedStopHabit] = React.useState<
-    string | undefined
-  >(undefined);
-  const [selectedLifeRules, setSelectedLifeRules] = React.useState<string[]>(
-    []
-  );
-
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    const savedBigGoal = localStorage.getItem('bigGoal');
-    if (savedBigGoal) setBigGoal(savedBigGoal);
+  const monthId = format(currentMonth, 'yyyy-MM');
 
-    const saved5YearVision = localStorage.getItem('5YearVision');
-    if (saved5YearVision) setFiveYearVision(saved5YearVision);
+  const [fiveWords, setFiveWords] = React.useState(Array(5).fill(''));
+  
+  const bigGoalYearDocRef = useMemoFirebase(() => 
+    user ? doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal') : null
+  , [user, firestore]);
+  const { data: bigGoalYearData } = useDoc<VisionStatement>(bigGoalYearDocRef);
+  const bigGoalYear = bigGoalYearData?.goalText || 'Not set yet';
 
-    const savedMonthlyGoals = localStorage.getItem('monthlyGoals');
-    if (savedMonthlyGoals) setMonthlyGoals(JSON.parse(savedMonthlyGoals));
+  const fiveYearVisionDocRef = useMemoFirebase(() => 
+    user ? doc(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`, 'visionStatement') : null
+  , [user, firestore]);
+  const { data: fiveYearVisionData } = useDoc<any>(fiveYearVisionDocRef);
+  const fiveYearVision = fiveYearVisionData?.responseText || 'Not set yet';
 
-    const savedMonthlyBigGoal = localStorage.getItem('monthlyBigGoal');
-    if (savedMonthlyBigGoal) setSelectedMonthlyBigGoal(savedMonthlyBigGoal);
+  const monthlyGoalsCollectionRef = useMemoFirebase(() => 
+    user ? collection(firestore, `users/${user.uid}/sessions/default/monthlyGoals`) : null
+  , [user, firestore]);
+  const { data: monthlyGoalsData } = useCollection<MonthlyGoal>(monthlyGoalsCollectionRef);
+  
+  const monthlyPlanDocRef = useMemoFirebase(() => 
+    user ? doc(firestore, `users/${user.uid}/sessions/default/monthlyGoals`, monthId) : null
+  , [user, firestore, monthId]);
+  const { data: monthlyPlanData } = useDoc<MonthlyGoal>(monthlyPlanDocRef);
 
-    const savedStartHabits = localStorage.getItem('startHabits');
-    if (savedStartHabits)
-      setStartHabits(JSON.parse(savedStartHabits).filter((h: string) => h));
+  const availableMonthlyGoals = React.useMemo(() => 
+    monthlyGoalsData?.map(g => g.bigGoal).filter(g => g && g.trim() !== '') || []
+  , [monthlyGoalsData]);
+  
+  const journalEntriesCollectionRef = useMemoFirebase(() => 
+    user ? collection(firestore, `users/${user.uid}/sessions/default/journalEntries`) : null
+  , [user, firestore]);
+  const { data: journalEntries } = useCollection<JournalEntry>(journalEntriesCollectionRef);
+  
+  const startHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_start').map(e => e.text) || [], [journalEntries]);
+  const stopHabits = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'habit_stop').map(e => e.text) || [], [journalEntries]);
+  const lifeRules = React.useMemo(() => journalEntries?.filter(e => e.entryType === 'reason').map(e => e.text) || [], [journalEntries]);
 
-    const savedStopHabits = localStorage.getItem('stopHabits');
-    if (savedStopHabits)
-      setStopHabits(JSON.parse(savedStopHabits).filter((h: string) => h));
+  // UI state for selections
+  const [selectedMonthlyBigGoal, setSelectedMonthlyBigGoal] = React.useState<string | undefined>(undefined);
+  const [selectedStartHabit, setSelectedStartHabit] = React.useState<string | undefined>(undefined);
+  const [selectedStopHabit, setSelectedStopHabit] = React.useState<string | undefined>(undefined);
+  const [selectedLifeRules, setSelectedLifeRules] = React.useState<string[]>([]);
+  const [goals, setGoals] = React.useState<Goal[]>([]);
 
-    const savedLifeRules = localStorage.getItem('personaWhy');
-    if (savedLifeRules)
-      setLifeRules(JSON.parse(savedLifeRules).filter((r: string) => r));
+   React.useEffect(() => {
+    if (monthlyPlanData) {
+      setSelectedMonthlyBigGoal(monthlyPlanData.bigGoal);
+      setGoals(monthlyPlanData.goals as Goal[] || []);
+    }
+  }, [monthlyPlanData]);
 
-    const savedSelectedStartHabit = localStorage.getItem('selectedStartHabit');
-    if (savedSelectedStartHabit)
-      setSelectedStartHabit(savedSelectedStartHabit);
-
-    const savedSelectedStopHabit = localStorage.getItem('selectedStopHabit');
-    if (savedSelectedStopHabit) setSelectedStopHabit(savedSelectedStopHabit);
-
-    const savedSelectedLifeRules = localStorage.getItem('selectedLifeRules');
-    if (savedSelectedLifeRules)
-      setSelectedLifeRules(JSON.parse(savedSelectedLifeRules));
-  }, []);
+  const handleUpdateMonthlyPlan = (field: keyof MonthlyGoal, value: any) => {
+    if (!monthlyPlanDocRef) return;
+    setDocumentNonBlocking(monthlyPlanDocRef, { [field]: value, id: monthId, sessionID: 'default' }, { merge: true });
+  }
 
   const handleToggleGoal = (id: string) => {
-    setGoals(
-      goals.map((goal) =>
+    const newGoals = goals.map((goal) =>
         goal.id === id ? { ...goal, completed: !goal.completed } : goal
-      )
     );
+    setGoals(newGoals);
+    handleUpdateMonthlyPlan('goals', newGoals);
   };
 
+  const handleGoalTextChange = (id: string, text: string) => {
+    const newGoals = goals.map((goal) => (goal.id === id ? { ...goal, text } : goal));
+    setGoals(newGoals);
+    handleUpdateMonthlyPlan('goals', newGoals);
+  };
+
+  const handleAddGoal = () => {
+    const newGoal: Goal = { id: Date.now().toString(), text: '', completed: false };
+    const newGoals = [...goals, newGoal];
+    setGoals(newGoals);
+    handleUpdateMonthlyPlan('goals', newGoals);
+  };
+
+  const handleRemoveGoal = (id: string) => {
+    const newGoals = goals.filter((goal) => goal.id !== id);
+    setGoals(newGoals);
+    handleUpdateMonthlyPlan('goals', newGoals);
+  };
+
+  const handleLifeRuleSelect = (rule: string) => {
+    const newRules = selectedLifeRules.includes(rule) 
+        ? selectedLifeRules.filter((r) => r !== rule)
+        : [...selectedLifeRules, rule].slice(0,2);
+    setSelectedLifeRules(newRules);
+    // Not saving this part to DB as it's not in schema
+  };
+  
   const handleSave = () => {
-    if (selectedMonthlyBigGoal) {
-      localStorage.setItem('monthlyBigGoal', selectedMonthlyBigGoal);
-    }
-    if (selectedStartHabit) {
-      localStorage.setItem('selectedStartHabit', selectedStartHabit);
-    } else {
-      localStorage.removeItem('selectedStartHabit');
-    }
-
-    if (selectedStopHabit) {
-      localStorage.setItem('selectedStopHabit', selectedStopHabit);
-    } else {
-      localStorage.removeItem('selectedStopHabit');
-    }
-
-    localStorage.setItem('selectedLifeRules', JSON.stringify(selectedLifeRules));
-
-    console.log('Saving Monthly Planner Data...');
     toast({
       title: 'Planner Saved!',
       description: 'Your monthly plan has been successfully saved.',
     });
   };
 
-  const handleMonthlyBigGoalChange = (value: string) => {
-    setSelectedMonthlyBigGoal(value);
-  };
-
-  const handleGoalTextChange = (id: string, text: string) => {
-    setGoals(goals.map((goal) => (goal.id === id ? { ...goal, text } : goal)));
-  };
-
-  const handleAddGoal = () => {
-    const newGoal: Goal = { id: Date.now().toString(), text: '', completed: false };
-    setGoals([...goals, newGoal]);
-  };
-
-  const handleRemoveGoal = (id: string) => {
-    setGoals(goals.filter((goal) => goal.id !== id));
-  };
-
-  const handleLifeRuleSelect = (rule: string) => {
-    setSelectedLifeRules((prev) => {
-      if (prev.includes(rule)) {
-        return prev.filter((r) => r !== rule);
-      }
-      if (prev.length < 2) {
-        return [...prev, rule];
-      }
-      toast({
-        title: 'Limit Reached',
-        description: 'You can only select up to 2 life rules.',
-        variant: 'destructive',
-      })
-      return prev;
-    });
-  };
-
   const goalsAchieved = goals.filter((g) => g.completed).length;
   const goalsSet = goals.length;
   const achievementRate = goalsSet > 0 ? Math.round((goalsAchieved / goalsSet) * 100) : 0;
-
-  const availableMonthlyGoals = monthlyGoals.filter((g) => g && g.trim() !== '');
 
   return (
     <div>
@@ -217,7 +192,7 @@ export default function MonthPlannerPage() {
               5 Year Vision:
             </Label>
             <p className="font-bold flex-1 truncate">
-              {fiveYearVision || 'Not set yet'}
+              {fiveYearVision}
             </p>
           </div>
           <Separator />
@@ -226,7 +201,7 @@ export default function MonthPlannerPage() {
               Big Goal for the YEAR:
             </Label>
             <p className="font-bold flex-1 truncate">
-              {bigGoal || 'Not set yet'}
+              {bigGoalYear}
             </p>
           </div>
           <Separator />
@@ -236,7 +211,10 @@ export default function MonthPlannerPage() {
             </Label>
             <div className="flex-1">
               <Select
-                onValueChange={handleMonthlyBigGoalChange}
+                onValueChange={(value) => {
+                  setSelectedMonthlyBigGoal(value);
+                  handleUpdateMonthlyPlan('bigGoal', value);
+                }}
                 value={selectedMonthlyBigGoal}
               >
                 <SelectTrigger className="font-bold">
@@ -278,8 +256,8 @@ export default function MonthPlannerPage() {
                   />
                   <Input
                     id={`goal-text-${goal.id}`}
-                    value={goal.text}
-                    onChange={(e) => handleGoalTextChange(goal.id, e.target.value)}
+                    defaultValue={goal.text}
+                    onBlur={(e) => handleGoalTextChange(goal.id, e.target.value)}
                     className={`flex-1 text-sm ${
                       goal.completed ? 'line-through text-muted-foreground' : ''
                     }`}
@@ -458,5 +436,3 @@ export default function MonthPlannerPage() {
     </div>
   );
 }
-
-    

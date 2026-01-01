@@ -8,23 +8,16 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-
-type Entry = {
-  id: string;
-  text: string;
-  type: 'affirmation' | 'gratitude';
-};
+import { JournalEntry } from "@/lib/types";
 
 export default function AffirmationsGratitudePage() {
   const { firestore, user } = useFirebase();
@@ -32,13 +25,13 @@ export default function AffirmationsGratitudePage() {
 
   const entriesCollection = useMemoFirebase(() => {
     if (!user) return null;
-    return collection(firestore, `users/${user.uid}/sessions/default/purposeReasons`);
+    return collection(firestore, `users/${user.uid}/sessions/default/journalEntries`);
   }, [firestore, user]);
 
-  const { data: entries, isLoading } = useCollection<Entry>(entriesCollection);
+  const { data: entries, isLoading } = useCollection<JournalEntry>(entriesCollection);
 
-  const affirmations = React.useMemo(() => entries?.filter(e => e.type === 'affirmation') || [], [entries]);
-  const gratitude = React.useMemo(() => entries?.filter(e => e.type === 'gratitude') || [], [entries]);
+  const affirmations = React.useMemo(() => entries?.filter(e => e.entryType === 'affirmation') || [], [entries]);
+  const gratitude = React.useMemo(() => entries?.filter(e => e.entryType === 'gratitude') || [], [entries]);
 
   const handleSave = () => {
     toast({
@@ -49,7 +42,7 @@ export default function AffirmationsGratitudePage() {
 
   const addEntry = (type: 'affirmation' | 'gratitude') => {
     if (!entriesCollection) return;
-    addDocumentNonBlocking(entriesCollection, { text: "", type, sessionID: 'default' });
+    addDocumentNonBlocking(entriesCollection, { text: "", entryType: type, sessionID: 'default' });
   };
 
   const updateEntry = (id: string, text: string) => {
@@ -86,8 +79,8 @@ export default function AffirmationsGratitudePage() {
              {affirmations.map((affirmation) => (
               <div key={affirmation.id} className="flex items-center gap-2">
                 <Input
-                  value={affirmation.text}
-                  onChange={(e) => updateEntry(affirmation.id, e.target.value)}
+                  defaultValue={affirmation.text}
+                  onBlur={(e) => updateEntry(affirmation.id, e.target.value)}
                   placeholder="e.g., 'I attract positivity...'"
                 />
                 <Button variant="ghost" size="icon" onClick={() => removeEntry(affirmation.id)}>
@@ -114,8 +107,8 @@ export default function AffirmationsGratitudePage() {
             {gratitude.map((item) => (
                 <div key={item.id} className="flex items-center gap-2">
                     <Input
-                    value={item.text}
-                    onChange={(e) => updateEntry(item.id, e.target.value)}
+                    defaultValue={item.text}
+                    onBlur={(e) => updateEntry(item.id, e.target.value)}
                     placeholder="e.g., 'The sunny weather...'"
                     />
                     <Button variant="ghost" size="icon" onClick={() => removeEntry(item.id)}>
