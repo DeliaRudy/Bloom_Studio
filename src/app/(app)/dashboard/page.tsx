@@ -16,7 +16,7 @@ import Link from "next/link";
 const features = [
   {
     href: "/define-success",
-    title: "Define Success",
+    title: "My Ambition",
     description: "Clarify what success means to you.",
     icon: Target,
   },

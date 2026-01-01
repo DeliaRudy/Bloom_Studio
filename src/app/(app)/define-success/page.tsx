@@ -107,7 +107,7 @@ export default function DefineSuccessPage() {
   return (
     <div>
       <PageHeader
-        title="Ambition (My Definition of Success)"
+        title="My Ambition"
         description="Ambition is the driving force that will help you to achieve success over the course of your life. Success means different things to different people. In order for you to achieve success and realise your ambition you must first define what Success means to you."
       />
       

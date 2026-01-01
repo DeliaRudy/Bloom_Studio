@@ -24,7 +24,7 @@ import Link from "next/link"
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/define-success", label: "Define Success", icon: Target },
+  { href: "/define-success", label: "My Ambition", icon: Target },
   { href: "/life-vision", label: "Life Vision", icon: Calendar },
   { href: "/action-plan", label: "Action Plan", icon: ListChecks },
   { href: "/vision-statement", label: "Vision Statement", icon: Quote },
