@@ -13,9 +13,9 @@ import { Button } from '@/components/ui/button';
 import { updateProfile } from 'firebase/auth';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sparkles, Palette } from 'lucide-react';
+import { Sparkles, Palette, Save } from 'lucide-react';
 import { generateAvatarAction } from './actions';
-import { useTheme } from '@/components/theme-provider';
+import { useTheme } from 'next-themes';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export default function SettingsPage() {
@@ -30,7 +30,12 @@ export default function SettingsPage() {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const { theme, setTheme } = useTheme();
+  const { theme: activeTheme, setTheme: setActiveTheme } = useTheme();
+  const [selectedTheme, setSelectedTheme] = React.useState<string>(activeTheme || 'rose-gold');
+  
+  React.useEffect(() => {
+    setSelectedTheme(activeTheme || 'rose-gold');
+  }, [activeTheme]);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -121,6 +126,19 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveTheme = () => {
+    if (selectedTheme) {
+      document.documentElement.className = `theme-${selectedTheme}`;
+      setActiveTheme(selectedTheme);
+      localStorage.setItem('theme', selectedTheme);
+      toast({
+        title: 'Theme Saved',
+        description: `Your theme has been set to ${selectedTheme.replace('-', ' ')}.`,
+      });
+    }
+  };
+
+
   if (isLoading) {
       return (
           <div className="flex items-center justify-center h-full">
@@ -133,64 +151,38 @@ export default function SettingsPage() {
     <div>
       <PageHeader
         title="Account Settings"
-        description="Manage your account details and preferences."
+        description="Manage your account details, preferences, and appearance."
       />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-8">
-            <Card>
-                <CardHeader>
-                <CardTitle>My Profile</CardTitle>
-                <CardDescription>
-                    Update your personal information below.
-                </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={email} disabled readOnly />
-                    <p className="text-sm text-muted-foreground">
-                        Email cannot be changed.
-                    </p>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    />
-                </div>
-                </CardContent>
-                <CardFooter>
-                <Button onClick={handleUpdateProfile}>Save Changes</Button>
-                </CardFooter>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Theme</CardTitle>
-                    <CardDescription>
-                        Choose a color palette for your app.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="theme-select" className="flex items-center gap-2"><Palette/> Select Theme</Label>
-                         <Select onValueChange={setTheme} value={theme}>
-                            <SelectTrigger id="theme-select">
-                                <SelectValue placeholder="Select a theme" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="rose-gold">Rose Gold</SelectItem>
-                                <SelectItem value="black-gold">Black Gold</SelectItem>
-                                <SelectItem value="brown-gold">Brown Gold</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-        <div className="md:col-span-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <Card className="md:col-span-1">
+            <CardHeader>
+            <CardTitle>My Profile</CardTitle>
+            <CardDescription>
+                Update your personal information below.
+            </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} disabled readOnly />
+                <p className="text-sm text-muted-foreground">
+                    Email cannot be changed.
+                </p>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                />
+            </div>
+            </CardContent>
+            <CardFooter>
+            <Button onClick={handleUpdateProfile}>Save Changes</Button>
+            </CardFooter>
+        </Card>
+        <div className="md:col-span-1 space-y-8">
              <Card>
                 <CardHeader>
                     <CardTitle>Avatar</CardTitle>
@@ -228,8 +220,39 @@ export default function SettingsPage() {
                      </div>
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Theme</CardTitle>
+                    <CardDescription>
+                        Choose a color palette for your app.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid w-full max-w-sm items-center gap-1.5">
+                        <Label htmlFor="theme-select" className="flex items-center gap-2"><Palette/> Select Theme</Label>
+                         <Select onValueChange={setSelectedTheme} value={selectedTheme}>
+                            <SelectTrigger id="theme-select">
+                                <SelectValue placeholder="Select a theme" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="rose-gold">Rose Gold</SelectItem>
+                                <SelectItem value="black-gold">Black Gold</SelectItem>
+                                <SelectItem value="brown-gold">Brown Gold</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSaveTheme}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Theme
+                    </Button>
+                </CardFooter>
+            </Card>
         </div>
       </div>
     </div>
   );
-}
+
+    
