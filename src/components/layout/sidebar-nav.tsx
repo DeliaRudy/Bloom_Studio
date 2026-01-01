@@ -31,7 +31,8 @@ import {
   CalendarCheck,
   CalendarHeart,
   CalendarPlus,
-  CalendarDays
+  CalendarDays,
+  ClipboardList,
 } from "lucide-react"
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
@@ -48,6 +49,7 @@ const coreLinks = [
   { href: "/persona-definition", label: "Persona Definition", icon: UserCircle },
   { href: "/affirmations-gratitude", label: "Affirmations & Gratitude", icon: BookHeart },
   { href: "/habits", label: "Habits", icon: Repeat },
+  { href: "/daily-habits", label: "Daily Habits", icon: ClipboardList },
 ];
 
 const plansLinks = [

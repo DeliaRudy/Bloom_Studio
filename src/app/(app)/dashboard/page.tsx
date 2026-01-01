@@ -17,6 +17,7 @@ import {
   CalendarHeart,
   CalendarPlus,
   CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -86,6 +87,12 @@ const features = [
     title: "Habits",
     description: "Define habits to start and stop.",
     icon: Repeat,
+  },
+  {
+    href: "/daily-habits",
+    title: "Daily Habits",
+    description: "Define your daily habits.",
+    icon: ClipboardList,
   },
   {
     href: "/monthly-goals",
