@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import {
@@ -75,27 +76,27 @@ const flowStyles: Record<
     label: 'None',
   },
   light: {
-    fill: 'fill-[#FADADD]',
-    stroke: 'stroke-[#F8C4D3]',
+    fill: 'fill-pink-200',
+    stroke: 'stroke-pink-300',
     label: 'Light',
   },
   medium: {
-    fill: 'fill-[#F8C4D3]',
-    stroke: 'stroke-[#F3A0B9]',
+    fill: 'fill-pink-300',
+    stroke: 'stroke-pink-400',
     label: 'Medium',
   },
   heavy: {
-    fill: 'fill-[#F3A0B9]',
-    stroke: 'stroke-[#F3A0B9]',
+    fill: 'fill-pink-400',
+    stroke: 'stroke-pink-500',
     label: 'Heavy',
   },
 };
 
 const phaseStyles = {
-  menstruation: 'bg-[#FADADD]/50',
-  follicular: 'bg-[#D3E4CD]/50',
-  ovulation: 'bg-[#FFF2CC]/50',
-  luteal: 'bg-[#D1E0E9]/50',
+  menstruation: 'bg-red-100/50 dark:bg-red-900/20',
+  follicular: 'bg-green-100/50 dark:bg-green-900/20',
+  ovulation: 'bg-yellow-100/50 dark:bg-yellow-900/20',
+  luteal: 'bg-blue-100/50 dark:bg-blue-900/20',
 };
 
 const allSymptoms = [
@@ -510,7 +511,7 @@ export default function CycleTrackerPage() {
         <CardContent>
             <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="menstruation">
-                    <AccordionTrigger className='font-semibold text-base' style={{color: '#F3A0B9'}}>Phase 1: Menstruation (Days 1-7)</AccordionTrigger>
+                    <AccordionTrigger className='font-semibold text-base text-red-400'>Phase 1: Menstruation (Days 1-7)</AccordionTrigger>
                     <AccordionContent className="prose prose-sm max-w-none">
                         <p>Your body is releasing the uterine lining. Energy is lowest. This is a time for rest, reflection, and gentle movement.</p>
                         <h4>Productivity:</h4>
@@ -528,7 +529,7 @@ export default function CycleTrackerPage() {
                     </AccordionContent>
                 </AccordionItem>
                  <AccordionItem value="follicular">
-                    <AccordionTrigger className='font-semibold text-base' style={{color: '#9DBF94'}}>Phase 2: Follicular (Days 8-14)</AccordionTrigger>
+                    <AccordionTrigger className='font-semibold text-base text-green-400'>Phase 2: Follicular (Days 8-14)</AccordionTrigger>
                     <AccordionContent className="prose prose-sm max-w-none">
                         <p>Estrogen is rising, boosting your energy, mood, and brain skills. It's a time for new beginnings and planning.</p>
                         <h4>Productivity:</h4>
@@ -546,7 +547,7 @@ export default function CycleTrackerPage() {
                     </AccordionContent>
                 </AccordionItem>
                  <AccordionItem value="ovulation">
-                    <AccordionTrigger className='font-semibold text-base' style={{color: '#EAC468'}}>Phase 3: Ovulation (Days 15-17)</AccordionTrigger>
+                    <AccordionTrigger className='font-semibold text-base text-yellow-400'>Phase 3: Ovulation (Days 15-17)</AccordionTrigger>
                     <AccordionContent className="prose prose-sm max-w-none">
                         <p>Estrogen and testosterone peak, making you feel your most confident, energetic, and social. This is the time to connect.</p>
                         <h4>Productivity:</h4>
@@ -564,7 +565,7 @@ export default function CycleTrackerPage() {
                     </AccordionContent>
                 </AccordionItem>
                  <AccordionItem value="luteal">
-                    <AccordionTrigger className='font-semibold text-base' style={{color: '#A9C4D3'}}>Phase 4: Luteal (Days 18-28)</AccordionTrigger>
+                    <AccordionTrigger className='font-semibold text-base text-blue-400'>Phase 4: Luteal (Days 18-28)</AccordionTrigger>
                     <AccordionContent className="prose prose-sm max-w-none">
                         <p>Progesterone rises, energy winds down. This is a time for nesting, organizing, and completing tasks.</p>
                         <h4>Productivity:</h4>
