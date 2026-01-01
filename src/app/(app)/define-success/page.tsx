@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 const facetsOfLife = [
     "Profession/Career/Business",
@@ -93,6 +94,15 @@ export default function DefineSuccessPage() {
   };
 
   const currentMetric = entries[current];
+  const filledMetrics = entries.filter(e => e.text.trim() !== "").length;
+  const progress = (filledMetrics / 5) * 100;
+  
+  const getProgressEmoji = () => {
+    if (filledMetrics === 0) return "🤔";
+    if (filledMetrics < 3) return "✍️";
+    if (filledMetrics < 5) return "💡";
+    return "🎉";
+  }
 
   return (
     <div>
@@ -131,6 +141,18 @@ export default function DefineSuccessPage() {
         <h2 className="text-xl font-semibold">I will know I am successful when...</h2>
         <p className="text-muted-foreground">Answer the question below at least 5 times.</p>
       </div>
+
+       <Card className="mb-8">
+        <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+                <span className="text-2xl">{getProgressEmoji()}</span>
+                <div className="w-full">
+                     <Progress value={progress} className="h-3 [&>div]:bg-gradient-to-r [&>div]:from-yellow-400 [&>div]:to-green-500" />
+                     <p className="text-sm text-muted-foreground mt-2 text-right">{filledMetrics} of 5 metrics defined</p>
+                </div>
+            </div>
+        </CardContent>
+       </Card>
 
       <Carousel className="w-full max-w-4xl mx-auto" opts={{ loop: true }} setApi={setApi}>
         <CarouselContent>
