@@ -26,7 +26,6 @@ import {
 import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { Rose } from "@/components/icons/rose";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { Separator } from "@/components/ui/separator";
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -151,7 +150,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
              <div className="flex justify-center items-center gap-2 mb-4">
@@ -161,6 +160,9 @@ export default function SignupPage() {
             <CardDescription>Enter your information to create an account</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+            <Link href="/demo/dashboard" className="w-full">
+                <Button variant="secondary" className="w-full">Try Interactive Demo</Button>
+            </Link>
             <Button variant="outline" onClick={handleGoogleSignIn}>
                 <GoogleIcon />
                 Sign up with Google

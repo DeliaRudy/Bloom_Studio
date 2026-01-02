@@ -43,31 +43,38 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { ChevronRight } from "lucide-react"
 import { Rose } from "@/components/icons/rose"
 
-const coreLinks = [
-  { href: "/define-success", label: "My Ambition", icon: Target },
-  { href: "/life-vision", label: "Life Vision", icon: Calendar },
-  { href: "/vision-statement", label: "My Big Goal", icon: Quote },
-  { href: "/action-plan", label: "Action Plan", icon: ListChecks },
-  { href: "/vision-board", label: "Vision Board", icon: ImageIcon },
-  { href: "/goals-list", label: "Goals List", icon: ListTodo },
-  { href: "/travel-map", label: "Travel Map", icon: Map },
-  { href: "/persona-definition", label: "Persona Definition", icon: UserCircle },
-  { href: "/affirmations-gratitude", label: "Affirmations & Gratitude", icon: BookHeart },
-  { href: "/habits", label: "Habits", icon: Repeat },
-  { href: "/daily-habits", label: "Daily Habits", icon: ClipboardList },
-];
+type SidebarNavProps = {
+  isDemo?: boolean;
+}
 
-const plansLinks = [
-    { href: "/monthly-goals", label: "Monthly Goals", icon: CalendarCheck },
-    { href: "/month-map", label: "Month Map", icon: CalendarHeart },
-    { href: "/month-planner", label: "Month Planner", icon: CalendarPlus },
-    { href: "/week-planner", label: "Week Planner", icon: CalendarDays },
-    { href: "/daily-plan", label: "Daily Plan", icon: BookOpenCheck },
-    { href: "/cycle-tracker", label: "Cycle Tracker", icon: Droplets },
-]
-
-export function SidebarNav() {
+export function SidebarNav({ isDemo = false }: SidebarNavProps) {
   const pathname = usePathname()
+  const basePath = isDemo ? "/demo" : "";
+
+  const coreLinks = [
+    { href: `${basePath}/define-success`, label: "My Ambition", icon: Target },
+    { href: `${basePath}/persona-definition`, label: "Persona Definition", icon: UserCircle },
+    { href: `${basePath}/life-vision`, label: "Life Vision", icon: Calendar },
+    { href: `${basePath}/vision-statement`, label: "My Big Goal", icon: Quote },
+  ];
+  
+  const plansLinks = [
+      { href: `${basePath}/monthly-goals`, label: "Monthly Goals", icon: CalendarCheck },
+      { href: `${basePath}/month-planner`, label: "Month Planner", icon: CalendarPlus },
+      { href: `${basePath}/week-planner`, label: "Week Planner", icon: CalendarDays },
+      { href: `${basePath}/daily-plan`, label: "Daily Plan", icon: BookOpenCheck },
+  ]
+
+  const toolsLinks = [
+    { href: `${basePath}/vision-board`, label: "Vision Board", icon: ImageIcon },
+    { href: `${basePath}/action-plan`, label: "Action Plan", icon: ListChecks },
+    { href: `${basePath}/habits`, label: "Habits", icon: Repeat },
+    { href: `${basePath}/daily-habits`, label: "Daily Habits", icon: ClipboardList },
+    { href: `${basePath}/affirmations-gratitude`, label: "Affirmations & Gratitude", icon: BookHeart },
+    { href: `${basePath}/cycle-tracker`, label: "Cycle Tracker", icon: Droplets },
+    { href: `${basePath}/travel-map`, label: "Travel Map", icon: Map },
+    { href: `${basePath}/goals-list`, label: "Goals List", icon: ListTodo },
+  ]
 
   return (
     <>
@@ -80,9 +87,9 @@ export function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/dashboard">
+              <Link href={`${basePath}/dashboard`}>
                 <SidebarMenuButton
-                  isActive={pathname === "/dashboard"}
+                  isActive={pathname === `${basePath}/dashboard`}
                   tooltip={{
                     children: "Dashboard",
                   }}
@@ -94,7 +101,7 @@ export function SidebarNav() {
             </SidebarMenuItem>
             
             <SidebarGroup>
-                <Collapsible defaultOpen={false}>
+                <Collapsible defaultOpen={true}>
                     <CollapsibleTrigger asChild>
                         <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
                             <Heart className="h-4 w-4" />
@@ -159,10 +166,43 @@ export function SidebarNav() {
                 </Collapsible>
             </SidebarGroup>
 
+            <SidebarGroup>
+                 <Collapsible defaultOpen={false}>
+                    <CollapsibleTrigger asChild>
+                        <SidebarGroupLabel className="flex items-center gap-2 cursor-pointer group/label">
+                            <Sparkles className="h-4 w-4" />
+                            Tools & Trackers
+                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/label:rotate-90" />
+                        </SidebarGroupLabel>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {toolsLinks.map((link) => (
+                                    <SidebarMenuItem key={link.href}>
+                                    <Link href={link.href}>
+                                        <SidebarMenuButton
+                                        isActive={pathname === link.href}
+                                        tooltip={{
+                                            children: link.label,
+                                        }}
+                                        >
+                                        <link.icon className="h-5 w-5" />
+                                        <span>{link.label}</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </CollapsibleContent>
+                </Collapsible>
+            </SidebarGroup>
+
              <SidebarMenuItem>
-              <Link href="/ai-reflection">
+              <Link href={`${basePath}/ai-reflection`}>
                 <SidebarMenuButton
-                  isActive={pathname === "/ai-reflection"}
+                  isActive={pathname === `${basePath}/ai-reflection`}
                   tooltip={{
                     children: "AI Reflection",
                   }}
@@ -174,9 +214,9 @@ export function SidebarNav() {
             </SidebarMenuItem>
 
              <SidebarMenuItem>
-              <Link href="/notifications">
+              <Link href={`${basePath}/notifications`}>
                 <SidebarMenuButton
-                  isActive={pathname === "/notifications"}
+                  isActive={pathname === `${basePath}/notifications`}
                   tooltip={{
                     children: "Notifications",
                   }}
@@ -188,9 +228,9 @@ export function SidebarNav() {
             </SidebarMenuItem>
 
              <SidebarMenuItem>
-                <Link href="/settings">
+                <Link href={`${basePath}/settings`}>
                     <SidebarMenuButton
-                    isActive={pathname === "/settings"}
+                    isActive={pathname === `${basePath}/settings`}
                     tooltip={{
                         children: "Settings",
                     }}
@@ -202,9 +242,9 @@ export function SidebarNav() {
             </SidebarMenuItem>
             
             <SidebarMenuItem>
-              <Link href="/about">
+              <Link href={`${basePath}/about`}>
                 <SidebarMenuButton
-                  isActive={pathname === "/about"}
+                  isActive={pathname === `${basePath}/about`}
                   tooltip={{
                     children: "About",
                   }}

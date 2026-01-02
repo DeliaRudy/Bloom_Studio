@@ -130,7 +130,7 @@ export default function LoginPage() {
         description: "Welcome back!",
       });
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: any) => {
       setError(err.message);
       toast({
         title: "Login Failed",
@@ -141,7 +141,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-2 mb-4">
@@ -151,6 +151,9 @@ export default function LoginPage() {
             <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+             <Link href="/demo/dashboard" className="w-full">
+                <Button variant="secondary" className="w-full">Try Interactive Demo</Button>
+            </Link>
             <Button variant="outline" onClick={handleGoogleSignIn}>
               <GoogleIcon />
               Sign in with Google
