@@ -36,6 +36,31 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const initializeNewUser = (firestore: any, user: any) => {
+    const userDocRef = doc(firestore, "users", user.uid);
+    setDocumentNonBlocking(userDocRef, {
+        id: user.uid,
+        email: user.email,
+        username: user.displayName || user.email,
+        creationDate: new Date().toISOString(),
+    }, { merge: true });
+
+    const sessionDocRef = doc(firestore, `users/${user.uid}/sessions`, 'default');
+    setDocumentNonBlocking(sessionDocRef, {
+        id: 'default',
+        userAccountId: user.uid,
+        startTime: new Date().toISOString(),
+    }, { merge: true });
+    
+    // CRITICAL: Ensure the bigGoal document exists for new users.
+    const visionStatementDocRef = doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
+    setDocumentNonBlocking(visionStatementDocRef, {
+        goalText: '', // Initialize with an empty goal
+        sessionID: 'default',
+        id: 'bigGoal'
+    }, { merge: true });
+};
+
 export default function SignupPage() {
   const [username, setUsername] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -65,20 +90,7 @@ export default function SignupPage() {
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        setDocumentNonBlocking(userDocRef, {
-          id: user.uid,
-          email: user.email,
-          username: user.email,
-          creationDate: new Date().toISOString(),
-        }, { merge: true });
-
-        const sessionCollectionRef = collection(firestore, `users/${user.uid}/sessions`);
-        const sessionDocRef = doc(sessionCollectionRef, 'default');
-        setDocumentNonBlocking(sessionDocRef, {
-          id: 'default',
-          userAccountId: user.uid,
-          startTime: new Date().toISOString(),
-        }, { merge: true });
+        initializeNewUser(firestore, user);
       }
 
       toast({
@@ -117,22 +129,15 @@ export default function SignupPage() {
       await updateProfile(newUser, {
         displayName: username,
       });
-      
-      const userDocRef = doc(firestore, "users", newUser.uid);
-      setDocumentNonBlocking(userDocRef, {
-        id: newUser.uid,
-        email: newUser.email,
-        username: username,
-        creationDate: new Date().toISOString(),
-      }, { merge: true });
 
-      const sessionCollectionRef = collection(firestore, `users/${newUser.uid}/sessions`);
-      const sessionDocRef = doc(sessionCollectionRef, 'default');
-      setDocumentNonBlocking(sessionDocRef, {
-        id: 'default',
-        userAccountId: newUser.uid,
-        startTime: new Date().toISOString(),
-      }, { merge: true });
+      // Pass the new user object to the initialization function
+      const userToInit = {
+          uid: newUser.uid,
+          email: newUser.email,
+          displayName: username,
+      };
+      
+      initializeNewUser(firestore, userToInit);
 
       toast({
         title: "Account Created",
