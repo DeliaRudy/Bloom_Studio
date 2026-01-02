@@ -38,12 +38,12 @@ const GoogleIcon = () => (
 
 const initializeNewUser = async (firestore: any, user: User) => {
     const userDocRef = doc(firestore, "users", user.uid);
-    // Use setDoc for clarity when creating a new user's document structure.
     await setDoc(userDocRef, {
         id: user.uid,
         email: user.email,
-        username: user.displayName || user.email,
-        creationDate: new Date().toISOString(),
+        username: user.displayName || user.email?.split('@')[0],
+        creationDate: user.metadata.creationTime || new Date().toISOString(),
+        photoURL: user.photoURL
     }, { merge: true });
 
     const sessionDocRef = doc(firestore, `users/${user.uid}/sessions`, 'default');
@@ -53,12 +53,11 @@ const initializeNewUser = async (firestore: any, user: User) => {
         startTime: new Date().toISOString(),
     }, { merge: true });
     
-    // CRITICAL: Ensure the bigGoal document exists for new users.
     const visionStatementDocRef = doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
     await setDoc(visionStatementDocRef, {
-        goalText: '', // Initialize with an empty goal
+        id: 'bigGoal',
         sessionID: 'default',
-        id: 'bigGoal'
+        goalText: '',
     }, { merge: true });
 };
 
@@ -131,7 +130,6 @@ export default function SignupPage() {
         displayName: username,
       });
 
-      // After profile update, the newUser object has the correct displayName
       await initializeNewUser(firestore, newUser);
 
       toast({
@@ -216,6 +214,7 @@ export default function SignupPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSignup()}
               />
             </div>
              {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -235,5 +234,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
-    

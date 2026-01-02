@@ -54,39 +54,33 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const ensureUserDocuments = async (user: User) => {
-    // Check and create /users/{userId} if it doesn't exist
-    const userDocRef = doc(firestore, "users", user.uid);
-    const userDocSnap = await getDoc(userDocRef);
-    if (!userDocSnap.exists()) {
-      await setDoc(userDocRef, {
-        id: user.uid,
-        email: user.email,
-        username: user.displayName || user.email,
-        creationDate: new Date().toISOString(),
-      }, { merge: true });
-    }
-
-    // Check and create default session if it doesn't exist
-    const sessionDocRef = doc(firestore, `users/${user.uid}/sessions/default`);
-    const sessionDocSnap = await getDoc(sessionDocRef);
-    if (!sessionDocSnap.exists()) {
-      await setDoc(sessionDocRef, {
-        id: 'default',
-        userAccountId: user.uid,
-        startTime: new Date().toISOString(),
-      }, { merge: true });
-    }
+    // This function ensures that the essential user-related documents exist in Firestore.
+    // It's safe to call on every login, for both new and existing users.
     
-    // CRITICAL: Ensure the bigGoal document exists for ALL users on login.
+    // 1. Ensure /users/{userId} document exists
+    const userDocRef = doc(firestore, "users", user.uid);
+    await setDoc(userDocRef, {
+      id: user.uid,
+      email: user.email,
+      username: user.displayName || user.email?.split('@')[0],
+      creationDate: user.metadata.creationTime || new Date().toISOString(),
+      photoURL: user.photoURL
+    }, { merge: true }); // Use merge:true to safely create or update the document.
+
+    // 2. Ensure default session document exists
+    const sessionDocRef = doc(firestore, `users/${user.uid}/sessions/default`);
+    await setDoc(sessionDocRef, {
+      id: 'default',
+      userAccountId: user.uid,
+      startTime: new Date().toISOString(),
+    }, { merge: true });
+
+    // 3. CRITICAL: Ensure the bigGoal document exists for ALL users.
     const bigGoalDocRef = doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
-    const bigGoalDocSnap = await getDoc(bigGoalDocRef);
-    if (!bigGoalDocSnap.exists()) {
-      await setDoc(bigGoalDocRef, {
-          goalText: '', // Initialize with an empty goal
-          sessionID: 'default',
-          id: 'bigGoal'
-      }, { merge: true });
-    }
+    await setDoc(bigGoalDocRef, {
+      id: 'bigGoal',
+      sessionID: 'default',
+    }, { merge: true }); // Use merge:true to create it only if it's missing.
   };
 
 
@@ -202,6 +196,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               />
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -221,5 +216,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
