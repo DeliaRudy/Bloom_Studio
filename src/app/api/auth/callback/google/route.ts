@@ -5,7 +5,7 @@ import { initializeFirebase } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
 export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url);
+    const { searchParams, protocol, host } = new URL(request.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state');
 
@@ -17,12 +17,14 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const { userId } = JSON.parse(Buffer.from(state, 'base64').toString('ascii'));
+        const { userId } = JSON.parse(atob(state));
         if (!userId) {
             return NextResponse.json({ error: 'Invalid state: userId missing' }, { status: 400 });
         }
         
-        const redirectURI = process.env.GOOGLE_REDIRECT_URI;
+        // Dynamically construct the redirect URI
+        const redirectURI = `${protocol}//${host}/api/auth/callback/google`;
+
         const oAuth2Client = new OAuth2Client(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_CLIENT_SECRET,
@@ -33,21 +35,15 @@ export async function GET(request: NextRequest) {
         const { refresh_token } = tokens;
         
         if (!refresh_token) {
-             // This happens if the user has already granted consent and a refresh token wasn't re-issued.
-             // You might redirect with a message, or if you need it, force re-consent.
-            console.warn("Refresh token not received. User may have already granted consent.");
-            // For this flow, we will proceed and assume a token might already exist.
+             console.warn("Refresh token not received. User may have already granted consent.");
         }
 
-        // Initialize server-side Firestore
         const { firestore } = initializeFirebase();
         
-        // Securely store the refresh token in the user's document
         const userDocRef = doc(firestore, `users/${userId}`);
         await setDoc(userDocRef, { googleRefreshToken: refresh_token }, { merge: true });
 
-        // Redirect user back to the daily planner page
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+        const appUrl = `${protocol}//${host}`;
         return NextResponse.redirect(`${appUrl}/daily-plan?status=calendar-connected`);
 
     } catch (error: any) {

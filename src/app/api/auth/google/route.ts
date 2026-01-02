@@ -4,11 +4,11 @@ import { NextResponse, NextRequest } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 
 export async function GET(request: NextRequest) {
-  const redirectURI = process.env.GOOGLE_REDIRECT_URI;
+  const { protocol, host } = new URL(request.url);
 
-  if (!redirectURI) {
-    return NextResponse.json({ error: 'Google Redirect URI not configured' }, { status: 500 });
-  }
+  // Dynamically construct the redirect URI based on the request's host.
+  // This works for localhost, deployed previews, and production.
+  const redirectURI = `${protocol}//${host}/api/auth/callback/google`;
 
   const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     ],
     // Pass the state parameter, which can contain the user ID to identify the user upon callback
     state: state || undefined,
+    prompt: 'consent' // Force consent screen to ensure refresh token is always sent
   });
 
   return NextResponse.redirect(authorizeUrl);

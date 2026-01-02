@@ -111,7 +111,7 @@ export function DailyPlanClient() {
   const handleConnectCalendar = () => {
     if (!user) return;
     // Pass the user's UID in the state parameter to securely identify them in the callback
-    const state = Buffer.from(JSON.stringify({ userId: user.uid })).toString('base64');
+    const state = btoa(JSON.stringify({ userId: user.uid }));
     window.location.href = `/api/auth/google?state=${state}`;
   }
 
