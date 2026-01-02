@@ -1,9 +1,9 @@
 
 import { google } from 'googleapis';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const redirectURI = process.env.GOOGLE_REDIRECT_URI;
 
   if (!redirectURI) {
@@ -16,6 +16,9 @@ export async function GET() {
     redirectURI
   );
 
+  const { searchParams } = new URL(request.url);
+  const state = searchParams.get('state');
+
   // Generate the url that will be used for the consent dialog.
   const authorizeUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline', // 'offline' grants a refresh token
@@ -23,6 +26,8 @@ export async function GET() {
         'https://www.googleapis.com/auth/calendar.readonly',
         'https://www.googleapis.com/auth/calendar.events'
     ],
+    // Pass the state parameter, which can contain the user ID to identify the user upon callback
+    state: state || undefined,
   });
 
   return NextResponse.redirect(authorizeUrl);

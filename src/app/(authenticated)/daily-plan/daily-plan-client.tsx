@@ -109,8 +109,10 @@ export function DailyPlanClient() {
   };
 
   const handleConnectCalendar = () => {
-    // Redirect to our own API route to start the OAuth flow
-    window.location.href = '/api/auth/google';
+    if (!user) return;
+    // Pass the user's UID in the state parameter to securely identify them in the callback
+    const state = Buffer.from(JSON.stringify({ userId: user.uid })).toString('base64');
+    window.location.href = `/api/auth/google?state=${state}`;
   }
 
   const isLoading = isPlanLoading || areHabitsLoading;

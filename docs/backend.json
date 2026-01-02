@@ -24,6 +24,10 @@
           "type": "string",
           "description": "Date and time when the account was created.",
           "format": "date-time"
+        },
+        "googleRefreshToken": {
+            "type": "string",
+            "description": "The refresh token for Google API access."
         }
       },
       "required": [
