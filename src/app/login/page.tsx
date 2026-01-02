@@ -20,7 +20,8 @@ import { useAuth, useFirebase, useUser } from "@/firebase";
 import { 
   signInWithEmailAndPassword, 
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  User
 } from "firebase/auth";
 import { Rose } from "@/components/icons/rose";
 import { Separator } from "@/components/ui/separator";
@@ -53,39 +54,53 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const ensureUserDocuments = async (user: User) => {
+    // Check and create /users/{userId} if it doesn't exist
+    const userDocRef = doc(firestore, "users", user.uid);
+    const userDocSnap = await getDoc(userDocRef);
+    if (!userDocSnap.exists()) {
+      setDocumentNonBlocking(userDocRef, {
+        id: user.uid,
+        email: user.email,
+        username: user.displayName || user.email,
+        creationDate: new Date().toISOString(),
+      }, { merge: true });
+    }
+
+    // Check and create default session if it doesn't exist
+    const sessionDocRef = doc(firestore, `users/${user.uid}/sessions/default`);
+    const sessionDocSnap = await getDoc(sessionDocRef);
+    if (!sessionDocSnap.exists()) {
+      setDocumentNonBlocking(sessionDocRef, {
+        id: 'default',
+        userAccountId: user.uid,
+        startTime: new Date().toISOString(),
+      }, { merge: true });
+    }
+    
+    // CRITICAL: Ensure the bigGoal document exists for ALL users on login.
+    const bigGoalDocRef = doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
+    const bigGoalDocSnap = await getDoc(bigGoalDocRef);
+    if (!bigGoalDocSnap.exists()) {
+      setDocumentNonBlocking(bigGoalDocRef, {
+          goalText: '', // Initialize with an empty goal
+          sessionID: 'default',
+          id: 'bigGoal'
+      }, { merge: true });
+    }
+  };
+
+
   const handleGoogleSignIn = async () => {
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      // Check if user document already exists
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (!userDocSnap.exists()) {
-        // Create user document if it doesn't exist
-        setDocumentNonBlocking(userDocRef, {
-          id: user.uid,
-          email: user.email,
-          username: user.email, // Use email as username by default for Google sign-in
-          creationDate: new Date().toISOString(),
-        }, { merge: true });
-
-        // Create a default session
-        const sessionCollectionRef = collection(firestore, `users/${user.uid}/sessions`);
-        const sessionDocRef = doc(sessionCollectionRef, 'default');
-        setDocumentNonBlocking(sessionDocRef, {
-          id: 'default',
-          userAccountId: user.uid,
-          startTime: new Date().toISOString(),
-        }, { merge: true });
-      }
-
+      await ensureUserDocuments(result.user);
+      
       toast({
         title: "Login Successful",
-        description: `Welcome back, ${user.displayName}!`,
+        description: `Welcome back, ${result.user.displayName}!`,
       });
       router.push("/dashboard");
     } catch (err: any) {
@@ -102,7 +117,6 @@ export default function LoginPage() {
     setError(null);
     let loginEmail = emailOrUsername;
 
-    // Check if input is a username
     if (!emailOrUsername.includes('@')) {
         try {
             const usersRef = collection(firestore, "users");
@@ -124,7 +138,9 @@ export default function LoginPage() {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, loginEmail, password);
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
+      await ensureUserDocuments(userCredential.user);
+      
       toast({
         title: "Login Successful",
         description: "Welcome back!",
