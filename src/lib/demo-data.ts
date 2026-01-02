@@ -7,7 +7,7 @@ export const demoUser = {
   role: "Social Media Manager",
   aspiration: "Become a multi-platform influencer by creating consistent UGC and building brand partnerships.",
   platforms: "Instagram, TikTok, YouTube Shorts, LinkedIn",
-  avatarUrl: PlaceHolderImages.find(img => img.id === "vision-board-3")?.imageUrl || '',
+  avatarUrl: PlaceHolderImages.find(img => img.id === "vision-board-2")?.imageUrl || '',
   avatarPrompt: "A professional and creative social media manager, Anastasia, in a bright, modern office space, looking thoughtfully at a screen with social media icons."
 };
 
