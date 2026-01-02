@@ -26,7 +26,6 @@ import {
 import { Rose } from "@/components/icons/rose";
 import { Separator } from "@/components/ui/separator";
 import { doc, getDoc, setDoc, query, collection, where, getDocs } from "firebase/firestore";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -59,7 +58,7 @@ export default function LoginPage() {
     const userDocRef = doc(firestore, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
     if (!userDocSnap.exists()) {
-      setDocumentNonBlocking(userDocRef, {
+      await setDoc(userDocRef, {
         id: user.uid,
         email: user.email,
         username: user.displayName || user.email,
@@ -71,7 +70,7 @@ export default function LoginPage() {
     const sessionDocRef = doc(firestore, `users/${user.uid}/sessions/default`);
     const sessionDocSnap = await getDoc(sessionDocRef);
     if (!sessionDocSnap.exists()) {
-      setDocumentNonBlocking(sessionDocRef, {
+      await setDoc(sessionDocRef, {
         id: 'default',
         userAccountId: user.uid,
         startTime: new Date().toISOString(),
@@ -82,7 +81,7 @@ export default function LoginPage() {
     const bigGoalDocRef = doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
     const bigGoalDocSnap = await getDoc(bigGoalDocRef);
     if (!bigGoalDocSnap.exists()) {
-      setDocumentNonBlocking(bigGoalDocRef, {
+      await setDoc(bigGoalDocRef, {
           goalText: '', // Initialize with an empty goal
           sessionID: 'default',
           id: 'bigGoal'

@@ -26,7 +26,6 @@ import {
 } from "firebase/auth";
 import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { Rose } from "@/components/icons/rose";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -37,10 +36,10 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const initializeNewUser = (firestore: any, user: User) => {
+const initializeNewUser = async (firestore: any, user: User) => {
     const userDocRef = doc(firestore, "users", user.uid);
     // Use setDoc for clarity when creating a new user's document structure.
-    setDoc(userDocRef, {
+    await setDoc(userDocRef, {
         id: user.uid,
         email: user.email,
         username: user.displayName || user.email,
@@ -48,7 +47,7 @@ const initializeNewUser = (firestore: any, user: User) => {
     }, { merge: true });
 
     const sessionDocRef = doc(firestore, `users/${user.uid}/sessions`, 'default');
-    setDoc(sessionDocRef, {
+    await setDoc(sessionDocRef, {
         id: 'default',
         userAccountId: user.uid,
         startTime: new Date().toISOString(),
@@ -56,7 +55,7 @@ const initializeNewUser = (firestore: any, user: User) => {
     
     // CRITICAL: Ensure the bigGoal document exists for new users.
     const visionStatementDocRef = doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal');
-    setDoc(visionStatementDocRef, {
+    await setDoc(visionStatementDocRef, {
         goalText: '', // Initialize with an empty goal
         sessionID: 'default',
         id: 'bigGoal'
@@ -92,7 +91,7 @@ export default function SignupPage() {
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        initializeNewUser(firestore, user);
+        await initializeNewUser(firestore, user);
       }
 
       toast({
@@ -133,7 +132,7 @@ export default function SignupPage() {
       });
 
       // After profile update, the newUser object has the correct displayName
-      initializeNewUser(firestore, newUser);
+      await initializeNewUser(firestore, newUser);
 
       toast({
         title: "Account Created",
