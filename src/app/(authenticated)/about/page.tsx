@@ -13,7 +13,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 
 const capabilities = [
     "Define Your Ambition: Clarify what success truly means to you across all facets of life.",
@@ -26,6 +26,16 @@ const capabilities = [
     "Sync With Your Cycle: Leverage an AI-powered cycle tracker to align your tasks with your natural energy levels.",
     "Gain AI Insights: Receive auto-generated productivity analysis and reflections on your dashboard.",
 ];
+
+const aiFeatures = [
+    "SMART Goal Analysis: Get feedback on your 12-month goal to ensure it's Specific, Measurable, Achievable, Relevant, and Time-bound.",
+    "AI-Powered Reflections: Generate deep insights into your progress across the entire app for any date range.",
+    "Automated Productivity Analysis: The dashboard automatically provides an AI-generated summary of your recent productivity.",
+    "AI Avatar Generation: Create a unique, abstract avatar for your profile based on a text prompt.",
+    "Cycle Phase Prediction: The cycle tracker uses your data to predict the start and end dates of your menstrual phases.",
+    "Email Content Generation: AI crafts the content for email notifications based on the type of reminder."
+];
+
 
 export default function AboutPage() {
   return (
@@ -58,6 +68,23 @@ export default function AboutPage() {
               <div key={index} className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <p className="text-foreground/90">{capability}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline">AI-Powered Features</CardTitle>
+            <CardDescription>
+              Bloom uses AI to provide you with personalized insights and accelerate your growth. Here's how:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {aiFeatures.map((feature, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <p className="text-foreground/90">{feature}</p>
               </div>
             ))}
           </CardContent>
