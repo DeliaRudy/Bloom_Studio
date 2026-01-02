@@ -21,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Check, Clock, PlusCircle, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Clock, PlusCircle, Trash2, Link2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -107,6 +107,13 @@ export function DailyPlanClient() {
       description: 'Your plan for the day has been updated.',
     });
   };
+
+  const handleConnectCalendar = () => {
+      toast({
+          title: "Coming Soon!",
+          description: "Google Calendar integration is under development."
+      });
+  }
 
   const isLoading = isPlanLoading || areHabitsLoading;
 
@@ -228,6 +235,18 @@ export function DailyPlanClient() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
+                <CardTitle>Integrations</CardTitle>
+                <CardDescription>Connect to external services.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button className="w-full" onClick={handleConnectCalendar}>
+                    <Link2 className="mr-2 h-4 w-4" />
+                    Connect to Google Calendar
+                </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
               <CardTitle>Habit Checklist</CardTitle>
               <CardDescription>
                 Check off your daily habits as you complete them.
@@ -292,5 +311,3 @@ export function DailyPlanClient() {
     </div>
   );
 }
-
-    
