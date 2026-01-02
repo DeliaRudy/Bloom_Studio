@@ -130,7 +130,7 @@ export default function LoginPage() {
         description: "Welcome back!",
       });
       router.push("/dashboard");
-    } catch (err: any) => {
+    } catch (err: any) {
       setError(err.message);
       toast({
         title: "Login Failed",
@@ -206,3 +206,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
