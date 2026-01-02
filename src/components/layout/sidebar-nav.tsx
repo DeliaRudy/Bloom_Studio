@@ -36,6 +36,7 @@ import {
   Settings,
   Droplets,
   Bell,
+  Info,
 } from "lucide-react"
 import Link from "next/link"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
@@ -198,6 +199,20 @@ export function SidebarNav() {
                     <span>Settings</span>
                     </SidebarMenuButton>
                 </Link>
+            </SidebarMenuItem>
+            
+            <SidebarMenuItem>
+              <Link href="/about">
+                <SidebarMenuButton
+                  isActive={pathname === "/about"}
+                  tooltip={{
+                    children: "About",
+                  }}
+                >
+                  <Info className="h-5 w-5" />
+                  <span>About</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
