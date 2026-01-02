@@ -109,10 +109,8 @@ export function DailyPlanClient() {
   };
 
   const handleConnectCalendar = () => {
-      toast({
-          title: "Coming Soon!",
-          description: "Google Calendar integration is under development."
-      });
+    // Redirect to our own API route to start the OAuth flow
+    window.location.href = '/api/auth/google';
   }
 
   const isLoading = isPlanLoading || areHabitsLoading;
