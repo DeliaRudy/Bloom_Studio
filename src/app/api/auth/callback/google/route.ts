@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid state: userId missing' }, { status: 400 });
         }
         
-        // Dynamically construct the redirect URI
+        // Dynamically construct the redirect URI to match the initial request
         const redirectURI = `${protocol}//${host}/api/auth/callback/google`;
 
         const oAuth2Client = new OAuth2Client(
@@ -35,13 +35,16 @@ export async function GET(request: NextRequest) {
         const { refresh_token } = tokens;
         
         if (!refresh_token) {
-             console.warn("Refresh token not received. User may have already granted consent.");
+             console.warn("Refresh token not received. User may have already granted consent. This is okay for subsequent sign-ins.");
         }
 
         const { firestore } = initializeFirebase();
         
-        const userDocRef = doc(firestore, `users/${userId}`);
-        await setDoc(userDocRef, { googleRefreshToken: refresh_token }, { merge: true });
+        // Only update the refresh token if a new one was actually provided
+        if (refresh_token) {
+            const userDocRef = doc(firestore, `users/${userId}`);
+            await setDoc(userDocRef, { googleRefreshToken: refresh_token }, { merge: true });
+        }
 
         const appUrl = `${protocol}//${host}`;
         return NextResponse.redirect(`${appUrl}/daily-plan?status=calendar-connected`);
