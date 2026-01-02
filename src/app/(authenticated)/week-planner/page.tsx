@@ -73,9 +73,9 @@ export default function WeekPlannerPage() {
   const monthKey = format(weekStart, 'yyyy-MM');
 
   // --- Data Fetching ---
-  const fiveYearVisionDocRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`, 'visionStatement') : null, [user, firestore]);
-  const { data: fiveYearVisionData } = useDoc<any>(fiveYearVisionDocRef);
-  const fiveYearVision = fiveYearVisionData?.responseText || 'Not set yet';
+  const fiveYearVisionDocRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'fiveYearVision') : null, [user, firestore]);
+  const { data: fiveYearVisionData } = useDoc<VisionStatement>(fiveYearVisionDocRef);
+  const fiveYearVision = fiveYearVisionData?.statementText || 'Not set yet';
 
   const bigGoalYearDocRef = useMemoFirebase(() => user ? doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'bigGoal') : null, [user, firestore]);
   const { data: bigGoalYearData } = useDoc<VisionStatement>(bigGoalYearDocRef);

@@ -65,7 +65,7 @@ export default function LifeVisionPage() {
   
   const visionStatementDocRef = useMemoFirebase(() => {
       if(!user) return null;
-      return doc(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`, 'visionStatement');
+      return doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'fiveYearVision');
   }, [user, firestore]);
   
   const { data: visionStatementData } = useDoc<any>(visionStatementDocRef);
@@ -115,12 +115,14 @@ export default function LifeVisionPage() {
   const handleFiveYearChange = (promptKey: string, responseText: string) => {
     if (!fiveYearVisionPromptsCollection) return;
     const existing = fiveYearValues[promptKey];
-    if (existing) {
-        const docRef = doc(fiveYearVisionPromptsCollection, existing.id);
-        updateDoc(docRef, { responseText });
-    } else {
-        addDocumentNonBlocking(fiveYearVisionPromptsCollection, { id: promptKey, promptKey, responseText, sessionID: 'default' });
-    }
+    const docId = promptKey.replace(/[^a-zA-Z0-9]/g, ''); // Sanitize to create a Firestore-friendly ID
+
+    const docRef = doc(fiveYearVisionPromptsCollection, docId);
+    setDocumentNonBlocking(docRef, {
+        promptKey: promptKey,
+        responseText: responseText,
+        sessionID: 'default'
+    }, { merge: true });
   };
   
   const handleVisionStatementChange = (dream: string, amount: string) => {
@@ -131,8 +133,7 @@ export default function LifeVisionPage() {
       setDocumentNonBlocking(visionStatementDocRef, {
           dream,
           amount,
-          responseText: fullStatement,
-          promptKey: 'visionStatement',
+          statementText: fullStatement,
           sessionID: 'default'
       }, { merge: true });
   }

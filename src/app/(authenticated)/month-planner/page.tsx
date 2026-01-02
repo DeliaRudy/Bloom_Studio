@@ -55,10 +55,10 @@ export default function MonthPlannerPage() {
   const bigGoalYear = bigGoalYearData?.goalText || 'Not set yet';
 
   const fiveYearVisionDocRef = useMemoFirebase(() => 
-    user ? doc(firestore, `users/${user.uid}/sessions/default/fiveYearVisionPrompts`, 'visionStatement') : null
+    user ? doc(firestore, `users/${user.uid}/sessions/default/visionStatements`, 'fiveYearVision') : null
   , [user, firestore]);
-  const { data: fiveYearVisionData } = useDoc<any>(fiveYearVisionDocRef);
-  const fiveYearVision = fiveYearVisionData?.responseText || 'Not set yet';
+  const { data: fiveYearVisionData } = useDoc<VisionStatement>(fiveYearVisionDocRef);
+  const fiveYearVision = fiveYearVisionData?.statementText || 'Not set yet';
 
   const monthlyGoalsCollectionRef = useMemoFirebase(() => 
     user ? collection(firestore, `users/${user.uid}/sessions/default/monthlyGoals`) : null

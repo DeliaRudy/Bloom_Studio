@@ -22,7 +22,7 @@ import { Progress } from "@/components/ui/progress";
 import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { SuccessDefinition } from "@/lib/types";
-import { setDocumentNonBlocking } from "@/firebase";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const facetsOfLife = [
     "Profession/Career/Business",

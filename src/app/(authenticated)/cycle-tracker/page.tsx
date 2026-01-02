@@ -32,7 +32,7 @@ import {
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
   addDocumentNonBlocking,
-} from '@/firebase';
+} from '@/firebase/non-blocking-updates';
 import { collection, doc } from 'firebase/firestore';
 import { CycleDay } from '@/lib/types';
 import {
