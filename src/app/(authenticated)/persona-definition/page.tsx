@@ -13,6 +13,7 @@ import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc, addDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { JournalEntry } from "@/lib/types";
+import { AIInterview } from "@/components/ai-interview";
 
 type Trait = {
     id: string;
@@ -112,6 +113,15 @@ export default function PersonaDefinitionPage() {
                 title="Define Your Persona"
                 description="If your WHY is strong enough, nothing will stop you. Defining WHO you need to become gives you the character to succeed. This gives you reasons to dig deep and overcome your challenges."
             />
+             <Card className="mb-8">
+                <CardHeader>
+                    <CardTitle className="font-headline">AI Interview</CardTitle>
+                    <CardDescription>Use your voice to fill out this section. Click the button to have an AI assistant guide you through the questions.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AIInterview introText="Hello! I'm here to help you define your persona. Let's start with your 'Why'. In your own words, tell me why you want to achieve your Ambition, Vision and Goals." />
+                </CardContent>
+            </Card>
             <Card className="mb-8">
                 <CardHeader>
                     <CardTitle className="font-headline">My 'Why': I want to achieve my Ambition, Vision and Goals because...</CardTitle>
