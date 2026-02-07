@@ -31,6 +31,8 @@ import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase'
 import { collection, doc } from 'firebase/firestore';
 import { VisionStatement, MonthlyGoal, JournalEntry, HabitToManage } from '@/lib/types';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { AIInterview } from '@/components/ai-interview';
+import { processMonthPlannerTranscript } from './actions';
 
 
 type Goal = {
@@ -136,6 +138,31 @@ export default function MonthPlannerPage() {
     });
   };
 
+  const handleInterviewTranscript = async (transcript: string) => {
+    if (transcript.trim().length === 0) {
+      toast({ title: 'No speech detected', variant: 'destructive' });
+      return;
+    }
+    const result = await processMonthPlannerTranscript(transcript);
+    if (result.error || !result.data) {
+      toast({ title: 'Analysis Failed', description: result.error, variant: 'destructive' });
+      return;
+    }
+    if (!monthlyPlanDocRef) return;
+    
+    const { bigGoal, goals } = result.data;
+    const updatePayload: Partial<MonthlyGoal> = {};
+    if(bigGoal) updatePayload.bigGoal = bigGoal;
+    if(goals && goals.length > 0) {
+        const newGoals = goals.map(g => ({ id: `${Date.now()}-${g.slice(0,5)}`, text: g, completed: false }));
+        updatePayload.goals = [...(monthlyPlanData?.goals || []), ...newGoals];
+    }
+    
+    setDocumentNonBlocking(monthlyPlanDocRef, { ...updatePayload, id: monthId, sessionID: 'default' }, { merge: true });
+    toast({ title: 'Month Plan Updated!', description: 'Your plan has been updated from the interview.' });
+  };
+
+
   const goals = monthlyPlanData?.goals || [];
   const goalsAchieved = goals.filter((g) => g.completed).length;
   const goalsSet = goals.length;
@@ -172,6 +199,18 @@ export default function MonthPlannerPage() {
           </Button>
         </div>
       </div>
+      
+       <Card className="mb-6">
+        <CardHeader>
+            <CardTitle className="font-headline">AI Interview</CardTitle>
+            <CardDescription>Use your voice to fill out this section. The AI assistant will guide you through the questions for your monthly plan.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <AIInterview 
+                onTranscript={handleInterviewTranscript}
+            />
+        </CardContent>
+      </Card>
 
       <Card className="mb-6">
         <CardHeader>

@@ -47,6 +47,8 @@ import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase'
 import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { VisionStatement, MonthlyGoal, JournalEntry, WeeklyPlan, HabitToManage } from '@/lib/types';
+import { AIInterview } from '@/components/ai-interview';
+import { processWeeklyPlanTranscript } from './actions';
 
 
 type WeeklyGoal = {
@@ -213,6 +215,28 @@ export default function WeekPlannerPage() {
     updatePlanForWeek({ schedule: newSchedule });
   };
 
+  const handleInterviewTranscript = async (transcript: string) => {
+    if (transcript.trim().length === 0) {
+      toast({ title: 'No speech detected', variant: 'destructive' });
+      return;
+    }
+    const result = await processWeeklyPlanTranscript(transcript);
+    if (result.error || !result.data) {
+      toast({ title: 'Analysis Failed', description: result.error, variant: 'destructive' });
+      return;
+    }
+    
+    const { bigGoal, goals, peopleToConnect, affirmations } = result.data;
+    const updatePayload: Partial<WeeklyPlan> = {};
+    if(bigGoal) updatePayload.bigGoal = bigGoal;
+    if(goals && goals.length > 0) updatePayload.goals = goals.map(g => ({ id: `${Date.now()}-${g.slice(0,5)}`, text: g, priority: false }));
+    if(peopleToConnect && peopleToConnect.length > 0) updatePayload.peopleToConnect = peopleToConnect.map(p => ({ id: `${Date.now()}-${p.slice(0,5)}`, name: p, connected: false }));
+    if(affirmations && affirmations.length > 0) updatePayload.affirmations = affirmations;
+
+    updatePlanForWeek(updatePayload);
+    toast({ title: 'Weekly Plan Updated!', description: 'Your plan has been updated from the interview.' });
+  };
+
   // --- Derived State ---
   const goalsSet = currentPlan?.goals?.length || 0;
   const goalsAchievedValue = currentPlan?.goals?.filter(g => g.priority).length || 0;
@@ -256,6 +280,18 @@ export default function WeekPlannerPage() {
         </div>
       </div>
       
+       <Card className="mb-6">
+        <CardHeader>
+            <CardTitle className="font-headline">AI Interview</CardTitle>
+            <CardDescription>Use your voice to fill out this section. The AI assistant will guide you through the questions for your weekly plan.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <AIInterview 
+                onTranscript={handleInterviewTranscript}
+            />
+        </CardContent>
+      </Card>
+
       <CycleSyncBanner currentDate={weekStart} view="week" />
 
       <Card className="mb-6">

@@ -37,6 +37,8 @@ import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { DailyHabit, DailyPlan } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AIInterview } from '@/components/ai-interview';
+import { processDailyPlanTranscript } from './actions';
 
 
 const hours = Array.from({ length: 13 }, (_, i) => `${i + 7}:00`); // 7am to 7pm
@@ -115,6 +117,32 @@ export function DailyPlanClient() {
     window.location.href = `/api/auth/google?state=${state}`;
   }
 
+  const handleInterviewTranscript = async (transcript: string) => {
+    if (transcript.trim().length === 0) {
+      toast({ title: 'No speech detected', variant: 'destructive' });
+      return;
+    }
+    const result = await processDailyPlanTranscript(transcript);
+    if (result.error || !result.data) {
+      toast({ title: 'Analysis Failed', description: result.error, variant: 'destructive' });
+      return;
+    }
+    if (!dailyPlanDocRef) return;
+
+    const { priorities, schedule, gratitude, reflection } = result.data;
+    const newPriorities = priorities.map((p, i) => ({ id: `${Date.now()}-${i}`, text: p, completed: false }));
+
+    const updatePayload: Partial<DailyPlan> = {};
+    if (newPriorities.length > 0) updatePayload.priorities = newPriorities;
+    if (schedule && Object.keys(schedule).length > 0) updatePayload.schedule = { ...(dailyPlanData?.schedule || {}), ...schedule };
+    if (gratitude) updatePayload.gratitude = gratitude;
+    if (reflection) updatePayload.reflection = reflection;
+    
+    setDocumentNonBlocking(dailyPlanDocRef, updatePayload, { merge: true });
+
+    toast({ title: 'Daily Plan Updated!', description: 'Your plan has been updated with your spoken entries.' });
+  };
+
   const isLoading = isPlanLoading || areHabitsLoading;
 
   return (
@@ -148,6 +176,18 @@ export function DailyPlanClient() {
         </div>
       </div>
       
+      <Card className="mb-6">
+        <CardHeader>
+            <CardTitle className="font-headline">AI Interview</CardTitle>
+            <CardDescription>Use your voice to fill out this section. The AI assistant will guide you through the questions for your daily plan.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <AIInterview 
+                onTranscript={handleInterviewTranscript}
+            />
+        </CardContent>
+      </Card>
+
       <CycleSyncBanner currentDate={currentDate} view="day" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

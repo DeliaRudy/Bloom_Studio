@@ -20,6 +20,8 @@ import { doc, getDocs, collection } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { VisionStatement, MonthlyGoal } from '@/lib/types';
 import { format } from 'date-fns';
+import { AIInterview } from '@/components/ai-interview';
+import { processMonthlyGoalsTranscript } from './actions';
 
 export default function MonthlyGoalsPage() {
   const { firestore, user } = useFirebase();
@@ -86,12 +88,59 @@ export default function MonthlyGoalsPage() {
     });
   };
 
+  const handleInterviewTranscript = async (transcript: string) => {
+    if (transcript.trim().length === 0) {
+        toast({ title: 'No speech detected', variant: 'destructive' });
+        return;
+    }
+    const result = await processMonthlyGoalsTranscript(transcript);
+    if (result.error || !result.data) {
+        toast({ title: 'Analysis Failed', description: result.error, variant: 'destructive' });
+        return;
+    }
+    
+    if (!user) return;
+
+    const extractedGoals = result.data;
+    const updatedGoals: Record<string, string> = {};
+
+    for (const monthName in extractedGoals) {
+        const monthIndex = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
+        if (monthIndex !== -1) {
+            const monthId = format(new Date(currentYear, monthIndex), 'yyyy-MM');
+            const goalText = extractedGoals[monthName];
+
+            // Use the non-blocking update
+            const goalDocRef = doc(firestore, `users/${user.uid}/sessions/default/monthlyGoals`, monthId);
+            setDocumentNonBlocking(goalDocRef, { bigGoal: goalText, id: monthId, sessionID: 'default' }, { merge: true });
+            
+            updatedGoals[monthId] = goalText;
+        }
+    }
+    
+    // Optimistically update the local state to re-render the inputs
+    setMonthlyGoals(prev => ({ ...prev, ...updatedGoals }));
+
+    toast({ title: 'Monthly Goals Updated!', description: 'Your yearly goals have been updated from the interview.' });
+  };
+
+
   return (
     <div>
       <PageHeader
         title="Monthly Goals"
         description="Define the goals for each month that will help you get to the 1 big goal and get you closer to your 5-year vision and lifetime goals."
       />
+
+        <Card className="mb-6">
+            <CardHeader>
+                <CardTitle className="font-headline">AI Interview</CardTitle>
+                <CardDescription>Use your voice to state your goals for various months of the year.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <AIInterview onTranscript={handleInterviewTranscript} />
+            </CardContent>
+        </Card>
 
       {bigGoal && (
         <Card className="mb-8 bg-primary/5 border-primary/20">
