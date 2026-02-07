@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -104,6 +103,17 @@ export default function PersonaDefinitionPage() {
         });
     }
 
+    const handleInterviewTranscript = (transcript: string) => {
+        console.log("Transcript received:", transcript);
+        toast({
+            title: "Interview Response Captured",
+            description: "Your response has been logged to the console. The next step is to process it and fill the fields.",
+        });
+        // In a future step, this is where we would call a Genkit flow
+        // to process the transcript and then update the state/DB.
+        // For example: setReasons(processedTranscript.reasons);
+    };
+
     const paddedReasons = [...reasons, ...Array(5 - reasons.length).fill({id: '', text: ''})].slice(0,5);
     const paddedTraits = [...traits, ...Array(5 - traits.length).fill({id: '', word: '', meaning: ''})].slice(0,5);
 
@@ -119,7 +129,10 @@ export default function PersonaDefinitionPage() {
                     <CardDescription>Use your voice to fill out this section. Click the button to have an AI assistant guide you through the questions.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <AIInterview introText="Hello! I'm here to help you define your persona. Let's start with your 'Why'. In your own words, tell me why you want to achieve your Ambition, Vision and Goals." />
+                    <AIInterview 
+                        introText="Hello! I'm here to help you define your persona. Let's start with your 'Why'. In your own words, tell me why you want to achieve your Ambition, Vision and Goals."
+                        onTranscript={handleInterviewTranscript}
+                    />
                 </CardContent>
             </Card>
             <Card className="mb-8">
