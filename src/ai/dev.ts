@@ -1,4 +1,4 @@
-
+'use server';
 import { config } from 'dotenv';
 config();
 
@@ -9,5 +9,5 @@ import '@/ai/flows/predict-cycle-phases.ts';
 import '@/ai/flows/send-email-notification.ts';
 import '@/ai/flows/google-calendar-sync.ts';
 import '@/ai/flows/narrate-text-flow.ts';
-
+import '@/ai/flows/persona-interview-flow.ts';
     
