@@ -114,11 +114,6 @@ export default function PersonaDefinitionPage() {
             return;
         }
 
-        toast({
-            title: "Processing Response...",
-            description: "The AI is analyzing your response to fill in the fields.",
-        });
-
         const result = await processTranscriptAction(transcript);
 
         if (result.error || !result.data) {
@@ -129,49 +124,56 @@ export default function PersonaDefinitionPage() {
             });
             return;
         }
-
+        
+        if (!journalCollection || !firestore || !user) return;
+        
         const { reasons: extractedReasons, traits: extractedTraits, philosophy: extractedPhilosophy } = result.data;
         
-        if (!journalCollection || !firestore) return;
+        // This batch will add all the new documents.
+        const addBatch = writeBatch(firestore);
 
-        // Use a batch to clear previous persona entries for this user
-        const deleteBatch = writeBatch(firestore);
-        journalData?.forEach(entry => {
-            if (['reason', 'trait_word', 'trait_meaning', 'philosophy'].includes(entry.entryType)) {
-                const docRef = doc(journalCollection, entry.id);
-                deleteBatch.delete(docRef);
-            }
-        });
-        await deleteBatch.commit();
-
-        // Add the new entries extracted by the AI
         extractedReasons.forEach(reasonText => {
             if (reasonText) {
-                addDocumentNonBlocking(journalCollection, { text: reasonText, entryType: 'reason', sessionID: 'default' });
+                const newDocRef = doc(collection(firestore, `users/${user.uid}/sessions/default/journalEntries`));
+                addBatch.set(newDocRef, { text: reasonText, entryType: 'reason', sessionID: 'default', id: newDocRef.id });
             }
         });
 
         for (const trait of extractedTraits) {
             if (trait.word) {
-                const wordDocPromise = addDocumentNonBlocking(journalCollection, { text: trait.word, entryType: 'trait_word', sessionID: 'default' });
+                const wordDocRef = doc(collection(firestore, `users/${user.uid}/sessions/default/journalEntries`));
+                addBatch.set(wordDocRef, { text: trait.word, entryType: 'trait_word', sessionID: 'default', id: wordDocRef.id });
                 if (trait.meaning) {
-                    wordDocPromise.then(wordDocRef => {
-                        if (wordDocRef) {
-                            addDocumentNonBlocking(journalCollection, { text: trait.meaning, entryType: 'trait_meaning', sessionID: 'default', relatedId: wordDocRef.id });
-                        }
-                    });
+                    const meaningDocRef = doc(collection(firestore, `users/${user.uid}/sessions/default/journalEntries`));
+                    addBatch.set(meaningDocRef, { text: trait.meaning, entryType: 'trait_meaning', sessionID: 'default', relatedId: wordDocRef.id, id: meaningDocRef.id });
                 }
             }
         }
         
         if(extractedPhilosophy) {
-            addDocumentNonBlocking(journalCollection, { text: extractedPhilosophy, entryType: 'philosophy', sessionID: 'default' });
+             const philosophyDoc = journalData?.find(j => j.entryType === 'philosophy');
+             if (philosophyDoc) {
+                 const docRef = doc(journalCollection, philosophyDoc.id);
+                 addBatch.update(docRef, { text: extractedPhilosophy });
+             } else {
+                const newDocRef = doc(collection(firestore, `users/${user.uid}/sessions/default/journalEntries`));
+                addBatch.set(newDocRef, { text: extractedPhilosophy, entryType: 'philosophy', sessionID: 'default', id: newDocRef.id });
+             }
         }
 
-        toast({
-            title: "Interview Processed!",
-            description: "Your persona details have been filled in based on your response.",
-        });
+        try {
+            await addBatch.commit();
+            toast({
+                title: "Persona Updated!",
+                description: "Your responses have been saved.",
+            });
+        } catch (error) {
+             toast({
+                title: "Save Failed",
+                description: "There was an error saving your responses.",
+                variant: 'destructive'
+            });
+        }
     };
 
     const paddedReasons = [...reasons, ...Array(5 - reasons.length).fill({id: '', text: ''})].slice(0,5);
@@ -186,11 +188,10 @@ export default function PersonaDefinitionPage() {
              <Card className="mb-8">
                 <CardHeader>
                     <CardTitle className="font-headline">AI Interview</CardTitle>
-                    <CardDescription>Use your voice to fill out this section. Click the button to have an AI assistant guide you through the questions.</CardDescription>
+                    <CardDescription>Use your voice to fill out this section. The AI assistant will guide you through the questions.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <AIInterview 
-                        introText="Hello! I'm here to help you define your persona. Let's start with your 'Why'. In your own words, tell me why you want to achieve your Ambition, Vision and Goals. Then, tell me about the person you need to become, and your personal philosophies."
                         onTranscript={handleInterviewTranscript}
                     />
                 </CardContent>
